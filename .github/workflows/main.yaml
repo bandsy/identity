@@ -60,7 +60,7 @@ jobs:
           elif [ github.ref == 'refs/heads/develop' ]
           then
             docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:develop
-          elif [ startsWith(github.ref, 'refs/heads/release/' ]
+          elif [ github.ref == 'refs/heads/release/*' ]
           then
             docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:release
           fi
@@ -75,7 +75,7 @@ jobs:
           elif [ github.ref == 'refs/heads/develop' ]
           then
             docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:develop
-          elif [ startsWith(github.ref, 'refs/heads/release/' ]
+          elif [ github.ref == 'refs/heads/release/*' ]
           then
             docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:release
           fi
