@@ -1,0 +1,10 @@
+apiVersion: v2
+name: identity
+description: Identity microservice for Bandsy
+
+type: application
+
+# chart version
+version: 0.2.0
+# app version
+appVersion: 0.2.0

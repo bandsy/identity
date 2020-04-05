@@ -1,0 +1,44 @@
+{
+  "name": "identity",
+  "version": "0.2.0",
+  "description": "Identity microservice for Bandsy",
+  "author": {
+    "name": "Feinwaru",
+    "email": "feinwaru@gmail.com",
+    "url": "https://feinwaru.com"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "lint": "yarn eslint . --ext .ts",
+    "lint:fix": "yarn eslint . --ext .ts --fix",
+    "test": "yarn cross-env NODE_ENV=test yarn jest --coverage",
+    "test:watch": "yarn cross-env NODE_ENV=test yarn jest --coverage --watchAll",
+    "view:coverage": "yarn serve coverage/lcov-report",
+    "build": "yarn tsc",
+    "build:watch": "yarn tsc --watch",
+    "run:dev": "yarn cross-env NODE_ENV=dev node -r dotenv/config -r source-map-support/register dist",
+    "run:prod": "yarn cross-env NODE_ENV=prod node -r dotenv/config dist",
+    "clean": "rm -rf dist coverage"
+  },
+  "devDependencies": {
+    "@types/jest": "^25.1.1",
+    "@types/node": "^13.11.0",
+    "@types/source-map-support": "^0.5.1",
+    "@typescript-eslint/eslint-plugin": "^2.22.0",
+    "@typescript-eslint/parser": "^2.22.0",
+    "cross-env": "^7.0.0",
+    "dotenv": "^8.2.0",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.20.1",
+    "jest": "^25.1.0",
+    "serve": "^11.3.0",
+    "source-map-support": "^0.5.16",
+    "ts-jest": "^25.1.0",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "fastify": "^2.12.1"
+  }
+}
