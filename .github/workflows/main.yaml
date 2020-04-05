@@ -52,7 +52,6 @@ jobs:
       - name: Docker tag
         run: |
           docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:${{ github.sha }}
-          docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:latest
 
           if [ ${{ github.ref }} == 'refs/heads/master' ]
           then
@@ -64,10 +63,11 @@ jobs:
           then
             docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:release
           fi
+
+          docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:latest
       - name: Push docker image
         run: |
           docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:${{ github.sha }}
-          docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:latest
 
           if [ ${{ github.ref }} == 'refs/heads/master' ]
           then
@@ -79,6 +79,8 @@ jobs:
           then
             docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:release
           fi
+
+          docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:latest
   deploy:
     name: Deploy to kubernetes
     if: github.ref == 'refs/heads/develop'
@@ -95,4 +97,4 @@ jobs:
       - name: Install helm
         run: curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh
       - name: Update deployment
-        run: helm upgrade ${{ github.event.repository.name }} ./chart --install --atomic --timeout 60 --namespace develop --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig --set-string sha=${{ github.sha }}
+        run: helm upgrade ${{ github.event.repository.name }} ./chart --install --atomic --timeout 60s --namespace develop --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig --set-string sha=${{ github.sha }}
