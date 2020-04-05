@@ -3,3 +3,4 @@ dist
 coverage
 .env
 telepresence.log
+yarn-error.log
