@@ -54,13 +54,13 @@ jobs:
           docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:${{ github.sha }}
           docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:latest
 
-          if [ github.ref == 'refs/heads/master' ]
+          if [ ${{ github.ref }} == 'refs/heads/master' ]
           then
             docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:master
-          elif [ github.ref == 'refs/heads/develop' ]
+          elif [ ${{ github.ref }} == 'refs/heads/develop' ]
           then
             docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:develop
-          elif [ github.ref == 'refs/heads/release/*' ]
+          elif [ ${{ github.ref }} == 'refs/heads/release/*' ]
           then
             docker tag ${{ github.event.repository.name }} docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:release
           fi
@@ -69,13 +69,13 @@ jobs:
           docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:${{ github.sha }}
           docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:latest
 
-          if [ github.ref == 'refs/heads/master' ]
+          if [ ${{ github.ref }} == 'refs/heads/master' ]
           then
             docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:master
-          elif [ github.ref == 'refs/heads/develop' ]
+          elif [ ${{ github.ref }} == 'refs/heads/develop' ]
           then
             docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:develop
-          elif [ github.ref == 'refs/heads/release/*' ]
+          elif [ ${{ github.ref }} == 'refs/heads/release/*' ]
           then
             docker push docker.pkg.github.com/bandsy/${{ github.event.repository.name }}/${{ github.event.repository.name }}:release
           fi
@@ -95,4 +95,4 @@ jobs:
       - name: Install helm
         run: curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh
       - name: Update deployment
-        run: helm upgrade ${{ github.event.repository.name }} ./chart --install --atomic --namespace develop --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig --set-string sha=${{ github.sha }}
+        run: helm upgrade ${{ github.event.repository.name }} ./chart --install --atomic --timeout 60 --namespace develop --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig --set-string sha=${{ github.sha }}
