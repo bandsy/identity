@@ -22,6 +22,9 @@ module.exports = {
   rules: {
     "quotes": ["error", "double"],
     "import/extensions": "off",
+    "no-console": "off",
+    "arrow-parens": "off",
+    "max-len": ["error", 150],
   },
   settings: {
     "import/resolver": {

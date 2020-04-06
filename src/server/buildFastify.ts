@@ -11,7 +11,7 @@ const buildFastify = (settings = {}): FastifyInstance => {
   fastify.get("/", async () => ({
     service: "identity",
     serviceVersion: "0.2.0",
-    apiPrefix: "api",
+    apiPrefix: "/api",
     nonce: "cunty mcjim",
   }));
 
