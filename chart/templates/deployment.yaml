@@ -34,3 +34,57 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
           successThreshold: 1
+        env:
+        - name: TRANS_EMAIL_PASS
+          valueFrom:
+            secretKeyRef:
+              key: TRANS_EMAIL_PASS
+              name: {{ .Release.Name }}
+
+        - name: WEBSERVER_LOGGER
+          valueFrom:
+            configMapKeyRef:
+              key: WEBSERVER_LOGGER
+              name: {{ .Release.Name }}
+        - name: WEBSERVER_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: WEBSERVER_PORT
+              name: {{ .Release.Name }}
+        - name: WEBSERVER_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              key: WEBSERVER_ADDRESS
+              name: {{ .Release.Name }}
+
+        - name: TRANS_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: TRANS_HOST
+              name: {{ .Release.Name }}
+        - name: TRANS_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: TRANS_PORT
+              name: {{ .Release.Name }}
+        - name: TRANS_SECURE
+          valueFrom:
+            configMapKeyRef:
+              key: TRANS_SECURE
+              name: {{ .Release.Name }}
+        - name: TRANS_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              key: TRANS_EMAIL
+              name: {{ .Release.Name }}
+
+        - name: EMAIL_DISPLAY
+          valueFrom:
+            configMapKeyRef:
+              key: EMAIL_DISPLAY
+              name: {{ .Release.Name }}
+        - name: EMAIL_DISPLAY_NAME
+          valueFrom:
+            configMapKeyRef:
+              key: EMAIL_DISPLAY_NAME
+              name: {{ .Release.Name }}

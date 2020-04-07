@@ -1,23 +1,56 @@
-import buildFastify from "./buildFastify";
+import { verifyEnvVars } from "./utils";
+import { startServer } from "./server";
 
-const config = {
-  webServerSettings: {
-    logger: true,
+const envVarsOk = verifyEnvVars([
+  {
+    envVar: "WEBSERVER_LOGGER",
+    requirements: {
+      type: "boolean",
+    },
   },
-  port: 3000,
-  address: "0.0.0.0",
-};
+  {
+    envVar: "WEBSERVER_PORT",
+    requirements: {
+      type: "number",
+    },
+  },
+  {
+    envVar: "WEBSERVER_ADDRESS",
+  },
 
-const start = async (): Promise<void> => {
-  const server = buildFastify(config.webServerSettings);
+  {
+    envVar: "TRANS_HOST",
+  },
+  {
+    envVar: "TRANS_PORT",
+    requirements: {
+      type: "number",
+    },
+  },
+  {
+    envVar: "TRANS_SECURE",
+    requirements: {
+      type: "boolean",
+    },
+  },
+  {
+    envVar: "TRANS_EMAIL",
+  },
+  {
+    envVar: "TRANS_EMAIL_PASS",
+  },
 
-  try {
-    await server.listen(config.port, config.address);
-    server.log.info(`identity magic happens on port ${config.port}`);
-  } catch (error) {
-    server.log.error(error);
-    process.exit(-1);
-  }
-};
+  {
+    envVar: "EMAIL_DISPLAY",
+  },
+  {
+    envVar: "EMAIL_DISPLAY_NAME",
+  },
+]);
 
-start();
+if (!envVarsOk) {
+  console.error("one or more environment variables were set incorrectly");
+  process.exit(-1);
+}
+
+startServer();

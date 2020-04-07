@@ -18,12 +18,14 @@
     "build": "yarn tsc",
     "build:watch": "yarn tsc --watch",
     "run:dev": "yarn cross-env NODE_ENV=dev node -r dotenv/config -r source-map-support/register dist",
+    "run:hot": "yarn cross-env NODE_ENV=dev yarn nodemon -r dotenv/config -r source-map-support/register dist --watch dist --watch .env",
     "run:prod": "yarn cross-env NODE_ENV=prod node -r dotenv/config dist",
     "clean": "rm -rf dist coverage"
   },
   "devDependencies": {
     "@types/jest": "^25.1.1",
     "@types/node": "^13.11.0",
+    "@types/nodemailer": "^6.4.0",
     "@types/source-map-support": "^0.5.1",
     "@typescript-eslint/eslint-plugin": "^2.22.0",
     "@typescript-eslint/parser": "^2.22.0",
@@ -33,12 +35,14 @@
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.20.1",
     "jest": "^25.1.0",
+    "nodemon": "^2.0.2",
     "serve": "^11.3.0",
     "source-map-support": "^0.5.16",
     "ts-jest": "^25.1.0",
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "fastify": "^2.12.1"
+    "fastify": "^2.12.1",
+    "nodemailer": "^6.4.6"
   }
 }
