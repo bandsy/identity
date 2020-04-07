@@ -3,13 +3,13 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}
 data:
-  WEBSERVER_LOGGER: true
-  WEBSERVER_PORT: 3000
+  WEBSERVER_LOGGER: "true"
+  WEBSERVER_PORT: "3000"
   WEBSERVER_ADDRESS: "0.0.0.0"
 
   TRANS_HOST: smtp.ionos.com
-  TRANS_PORT: 465
-  TRANS_SECURE: true
+  TRANS_PORT: "465"
+  TRANS_SECURE: "true"
   TRANS_EMAIL: bandsy@feinwaru.com
 
   EMAIL_DISPLAY: identity.bandsy@feinwaru.com

@@ -3,6 +3,9 @@ import { startServer } from "./server";
 
 const envVarsOk = verifyEnvVars([
   {
+    envVar: "NODE_ENV",
+  },
+  {
     envVar: "WEBSERVER_LOGGER",
     requirements: {
       type: "boolean",

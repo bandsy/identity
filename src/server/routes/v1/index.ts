@@ -15,12 +15,12 @@ const {
 } = process.env;
 
 const transporter = createTransport({
-  host: TRANS_HOST,
-  port: Number.parseInt(TRANS_PORT, 10),
-  secure: parseBool(TRANS_SECURE),
+  host: TRANS_HOST.trim(),
+  port: Number.parseInt(TRANS_PORT.trim(), 10),
+  secure: parseBool(TRANS_SECURE.trim()),
   auth: {
-    user: TRANS_EMAIL,
-    pass: TRANS_EMAIL_PASS,
+    user: TRANS_EMAIL.trim(),
+    pass: TRANS_EMAIL_PASS.trim(),
   },
 });
 
@@ -66,11 +66,11 @@ export default async (fastify: FastifyInstance): Promise<void> => {
     const verificationCode = "rawrxd";
 
     const info = await transporter.sendMail({
-      from: `"${EMAIL_DISPLAY_NAME}" <${EMAIL_DISPLAY}>`,
+      from: `"${EMAIL_DISPLAY_NAME.trim()}" <${EMAIL_DISPLAY.trim()}>`,
       to: email,
       subject: "Bandsy account verification",
       text: `verificationCode: ${verificationCode}`,
-    });
+    }).catch(error => error);
 
     return {
       email,

@@ -1,4 +1,5 @@
 import buildFastify from "./buildFastify";
+import { parseBool } from "../utils";
 
 const {
   WEBSERVER_LOGGER,
@@ -8,12 +9,12 @@ const {
 
 const startServer = async (): Promise<void> => {
   const server = buildFastify({
-    logger: WEBSERVER_LOGGER,
+    logger: parseBool(WEBSERVER_LOGGER.trim()),
   });
 
   try {
-    await server.listen(Number.parseInt(WEBSERVER_PORT, 10), WEBSERVER_ADDRESS);
-    server.log.info(`identity magic happens on port ${WEBSERVER_PORT}`);
+    await server.listen(Number.parseInt(WEBSERVER_PORT.trim(), 10), WEBSERVER_ADDRESS.trim());
+    server.log.info(`identity magic happens on port ${WEBSERVER_PORT.trim()}`);
   } catch (error) {
     server.log.error(error);
     process.exit(-1);

@@ -25,6 +25,8 @@ module.exports = {
     "no-console": "off",
     "arrow-parens": "off",
     "max-len": ["error", 150],
+    // doesnt work with typescript stuff
+    "no-undef": "off",
   },
   settings: {
     "import/resolver": {
