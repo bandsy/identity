@@ -198,6 +198,7 @@ class UserService {
 
       const tempInfo = await UserModel.deleteOne({ _id: bsonUuid as object });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return tempInfo as any;
     } catch (error) {
       throw new Error(`error deleting user ( uuid: ${uuid} ): ${error}`);
