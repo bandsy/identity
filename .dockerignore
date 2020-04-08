@@ -5,3 +5,4 @@ coverage
 telepresence.log
 yarn-error.log
 secret.yaml
+*.pem
