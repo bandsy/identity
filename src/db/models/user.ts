@@ -1,28 +1,9 @@
-import { prop, getModelForClass, modelOptions } from "@typegoose/typegoose";
-import muuid from "uuid-mongodb";
-import { Binary } from "bson";
+import { prop, getModelForClass } from "@typegoose/typegoose";
 
+import { Base } from "../schemas";
 import { IUser, UserAccountType, OauthServiceType } from "../types";
 
-@modelOptions({
-  schemaOptions: {
-    toObject: {
-      virtuals: true,
-    },
-  },
-})
-class User implements IUser {
-  @prop({
-    required: true,
-    default: muuid.v4,
-  })
-  public _id!: object;
-
-  @prop({
-    default: undefined,
-  })
-  public __v?: number;
-
+class User extends Base implements IUser {
   @prop({
     required: true,
     enum: UserAccountType,
@@ -31,65 +12,35 @@ class User implements IUser {
 
   @prop({
     required: true,
+    unique: true,
   })
   public email!: string;
 
   @prop({
-    default: undefined,
+    default: null,
   })
-  public opaqueToken?: string;
+  public verified!: boolean;
 
   @prop({
-    default: undefined,
-  })
-  public opaqueTokenExpiry?: Date;
-
-  @prop({
-    default: undefined,
+    default: null,
   })
   public salt?: string;
 
   @prop({
-    default: undefined,
+    default: null,
   })
   public passwordHash?: string;
 
   @prop({
-    default: undefined,
-  })
-  public verificationCode?: string;
-
-  @prop({
-    default: undefined,
-  })
-  public verificationCodeExpiry?: Date;
-
-  @prop({
-    default: undefined,
-  })
-  public verified?: boolean;
-
-  @prop({
     enum: OauthServiceType,
-    default: undefined,
+    default: null,
   })
   public oauthService?: OauthServiceType;
 
   @prop({
-    default: undefined,
-  })
-  public oauthId?: string;
-
-  @prop({
-    default: undefined,
+    default: null,
   })
   public accessToken?: string;
-
-  // virtuals
-  public get uuid(): string {
-    // eslint-disable-next-line no-underscore-dangle
-    return muuid.from(this._id as Binary).toString();
-  }
 }
 
 const UserModel = getModelForClass(User);
