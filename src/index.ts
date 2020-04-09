@@ -69,6 +69,8 @@ if (!envVarsOk) {
   process.exit(-1);
 }
 
+// TODO: propagate any errors from connectDb and startServer instead
+// TODO: better/separate way to handle env vars
 (async (): Promise<void> => {
   await connectDb();
   await startServer();

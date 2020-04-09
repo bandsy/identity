@@ -37,12 +37,32 @@ class User implements IUser {
   @prop({
     default: undefined,
   })
-  public password?: string;
+  public opaqueToken?: string;
+
+  @prop({
+    default: undefined,
+  })
+  public opaqueTokenExpiry?: Date;
+
+  @prop({
+    default: undefined,
+  })
+  public salt?: string;
+
+  @prop({
+    default: undefined,
+  })
+  public passwordHash?: string;
 
   @prop({
     default: undefined,
   })
   public verificationCode?: string;
+
+  @prop({
+    default: undefined,
+  })
+  public verificationCodeExpiry?: Date;
 
   @prop({
     default: undefined,

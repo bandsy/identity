@@ -13,11 +13,15 @@ interface IUser {
   accountType: UserAccountType;
 
   email: string;
+  opaqueToken?: string;
+  opaqueTokenExpiry?: Date;
 
   // bandsy account type
-  password?: string;
+  salt?: string;
+  passwordHash?: string;
 
   verificationCode?: string;
+  verificationCodeExpiry?: Date;
   verified?: boolean;
 
   // oauth account type
@@ -30,7 +34,7 @@ interface IUserSearchInfo {
   uuid?: object;
   accountType?: UserAccountType;
   email?: string;
-  password?: string;
+  opaqueToken?: string;
   verified?: boolean;
   oauthService?: OauthServiceType;
   oauthId?: string;
@@ -39,9 +43,13 @@ interface IUserSearchInfo {
 interface IUserCreateInfo {
   accountType: UserAccountType;
   email: string;
+  opaqueToken?: string;
+  opaqueTokenExpiry?: Date;
 
-  password?: string;
+  salt?: string;
+  passwordHash?: string;
   verificationCode?: string;
+  verificationCodeExpiry?: Date;
   verified?: boolean;
   oauthService?: OauthServiceType;
   oauthId?: string;
@@ -49,8 +57,12 @@ interface IUserCreateInfo {
 }
 
 interface IUserUpdateInfo {
-  password?: string;
+  opaqueToken?: string;
+  opaqueTokenExpiry?: Date;
+  salt?: string;
+  passwordHash?: string;
   verificationCode?: string;
+  verificationCodeExpiry?: Date;
   verified?: boolean;
   accessToken?: string;
 }
