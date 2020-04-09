@@ -12,16 +12,16 @@
   "scripts": {
     "lint": "yarn eslint . --ext .ts",
     "lint:fix": "yarn eslint . --ext .ts --fix",
-    "test": "yarn cross-env NODE_ENV=test yarn jest --coverage",
-    "test:watch": "yarn cross-env NODE_ENV=test yarn jest --coverage --watchAll",
+    "test": "yarn cross-env NODE_ENV=test NODE_PATH=. yarn jest --coverage",
+    "test:watch": "yarn cross-env NODE_ENV=test NODE_PATH=. yarn jest --coverage --watchAll",
     "view:coverage": "yarn serve coverage/lcov-report",
     "build": "yarn tsc",
     "build:watch": "yarn tsc --watch",
-    "run:dev": "yarn cross-env NODE_ENV=dev node -r dotenv/config -r source-map-support/register dist",
-    "run:hot": "yarn cross-env NODE_ENV=dev yarn nodemon -r dotenv/config -r source-map-support/register dist --watch dist --watch .env",
-    "kube:dev": "telepresence --swap-deployment identity --namespace develop --expose 3000 --method inject-tcp --run yarn cross-env NODE_ENV=dev node -r dotenv/config -r source-map-support/register dist",
-    "kube:hot": "telepresence --swap-deployment identity --namespace develop --expose 3000 --method inject-tcp --run yarn cross-env NODE_ENV=dev yarn nodemon -r dotenv/config -r source-map-support/register dist --watch dist --watch .env",
-    "run:prod": "yarn cross-env NODE_ENV=prod node -r dotenv/config dist",
+    "run:dev": "yarn cross-env NODE_ENV=dev NODE_PATH=. node -r dotenv/config -r source-map-support/register dist",
+    "run:hot": "yarn cross-env NODE_ENV=dev NODE_PATH=. yarn nodemon -r dotenv/config -r source-map-support/register dist --watch dist --watch .env",
+    "kube:dev": "telepresence --swap-deployment identity --namespace develop --expose 3000 --method inject-tcp --run yarn cross-env NODE_ENV=dev NODE_PATH=. node -r dotenv/config -r source-map-support/register dist",
+    "kube:hot": "telepresence --swap-deployment identity --namespace develop --expose 3000 --method inject-tcp --run yarn cross-env NODE_ENV=dev NODE_PATH=. yarn nodemon -r dotenv/config -r source-map-support/register dist --watch dist --watch .env",
+    "run:prod": "yarn cross-env NODE_ENV=prod NODE_PATH=. node -r dotenv/config dist",
     "clean": "rm -rf dist coverage"
   },
   "devDependencies": {

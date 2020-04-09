@@ -1,13 +1,13 @@
-import path from "path";
-
-import mongoose from "mongoose";
-
 import { verifyEnvVars } from "./utils";
-import { UserService } from "./db";
+import { connectDb } from "./db";
+import { startServer } from "./server";
 
 const envVarsOk = verifyEnvVars([
   {
     envVar: "NODE_ENV",
+  },
+  {
+    envVar: "NODE_PATH",
   },
   {
     envVar: "WEBSERVER_LOGGER",
@@ -53,6 +53,15 @@ const envVarsOk = verifyEnvVars([
   {
     envVar: "EMAIL_DISPLAY_NAME",
   },
+  {
+    envVar: "MONGO_HOST",
+  },
+  {
+    envVar: "MONGO_DB",
+  },
+  {
+    envVar: "MONGO_CERT",
+  },
 ]);
 
 if (!envVarsOk) {
@@ -60,42 +69,7 @@ if (!envVarsOk) {
   process.exit(-1);
 }
 
-// temp
 (async (): Promise<void> => {
-  // const tlsKeyFile = fs.readFileSync(path.join(__dirname, "..", "x509-full.pem")).toString();
-
-  await mongoose.connect("mongodb://mongo-main-0.mongo-service.mongodb.svc.cluster.local,mongo-main-1.mongo-service.mongodb.svc.cluster.local/", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    dbName: "rawrxd",
-    tls: true,
-    // tlsCAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-    tlsCertificateKeyFile: path.join(__dirname, "..", "x509-full.pem"),
-    authMechanism: "MONGODB-X509",
-    authSource: "$external",
-    tlsAllowInvalidCertificates: true,
-  }).catch(error => {
-    console.error(`e1: ${error}`);
-  });
-
-  mongoose.Promise = global.Promise;
-
-  const conn = mongoose.connection;
-
-  conn.on("open", () => {
-    console.log("mongo conn ok");
-  });
-
-  conn.on("error", error => {
-    console.error(`e2: ${error}`);
-  });
-
-  console.log("here...");
-
-  const aids = await UserService.findUsers({});
-  console.log(aids.map(e => e.uuid));
-
-  //
-  // startServer();
+  await connectDb();
+  await startServer();
 })();
-//

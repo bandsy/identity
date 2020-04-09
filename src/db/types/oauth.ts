@@ -1,6 +1,8 @@
-import { UserService } from "./user";
+enum OauthServiceType {
+  DISCORD,
+}
 
 export {
   // eslint-disable-next-line import/prefer-default-export
-  UserService,
+  OauthServiceType,
 };

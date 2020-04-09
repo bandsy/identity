@@ -1,7 +1,10 @@
+import { randomBytes } from "crypto";
+
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { createTransport } from "nodemailer";
 
 import { parseBool } from "../../../utils";
+import { UserService, UserAccountType } from "../../../db";
 
 const {
   TRANS_HOST,
@@ -41,6 +44,7 @@ enum OauthServiceType {
 }
 
 interface VerificationBody {
+  email: string;
   verificationCode: string;
 }
 
@@ -49,6 +53,19 @@ interface OauthVerificationBody {
   verificationCode: string;
 }
 
+const generateToken = (): Promise<string> => new Promise((resolve, reject) => {
+  randomBytes(48, (error, buffer) => {
+    if (error != null) {
+      return reject(error);
+    }
+
+    return resolve(buffer.toString("hex"));
+  });
+});
+
+// TODO: verification code timeout
+// TODO: salt pass
+// TODO: make email field unique
 export default async (fastify: FastifyInstance): Promise<void> => {
   // acount creation (email + pass):
   // - send email + pass to server
@@ -63,9 +80,17 @@ export default async (fastify: FastifyInstance): Promise<void> => {
     // save code to database with expiry date (bound to email + pass combo)
     // send email to user
     // return ok code (or failure)
-    const verificationCode = "rawrxd";
+    const verificationCode = await generateToken();
 
-    const info = await transporter.sendMail({
+    const user = await UserService.createUser({
+      accountType: UserAccountType.BANDSY,
+      email,
+      password,
+      verificationCode,
+      verified: false,
+    });
+
+    const emailInfo = await transporter.sendMail({
       from: `"${EMAIL_DISPLAY_NAME.trim()}" <${EMAIL_DISPLAY.trim()}>`,
       to: email,
       subject: "Bandsy account verification",
@@ -73,23 +98,32 @@ export default async (fastify: FastifyInstance): Promise<void> => {
     }).catch(error => error);
 
     return {
-      email,
-      password,
-      info,
+      user,
+      emailInfo,
     };
   });
 
   fastify.post("/verify", async (request: FastifyRequest) => {
-    const { verificationCode }: VerificationBody = request.body;
+    const { email, verificationCode }: VerificationBody = request.body;
 
     // check if code exists
     // check if code not expired
     // add user to database
     // send ok code (or failure)
     // send opaque token
+    const user = await UserService.findUserByEmail(email);
+    if (user.verificationCode !== verificationCode) {
+      throw new Error("verification codes dont match!");
+    }
+
+    const updateInfo = await UserService.updateUser(user.uuid, {
+      verificationCode: undefined,
+      verified: true,
+    });
 
     return {
       verificationCode,
+      updateInfo,
     };
   });
 
