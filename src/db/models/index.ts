@@ -1,6 +1,6 @@
-import { User, UserModel } from "./user";
+import { UserModel } from "./user";
 
 export {
-  User,
+  // eslint-disable-next-line import/prefer-default-export
   UserModel,
 };

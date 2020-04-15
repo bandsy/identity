@@ -1,14 +1,4 @@
-enum BaseSearchComparison {
-  EQUAL,
-  GREATER,
-  LESS,
-}
-
-enum BaseSortOrder {
-  STABLE,
-  INCREASING,
-  DECREASING,
-}
+import { FilterQuery, DocumentDefinition } from "mongoose";
 
 interface IBase {
   _id: object;
@@ -19,38 +9,14 @@ interface IBase {
   updatedAt: Date;
 }
 
-interface IBaseSearchOptions<T> {
-  value: T;
-  comparison: BaseSearchComparison;
-}
+type IBaseSearchInfo<T extends IBase> = Omit<FilterQuery<T>, "_id" | "__v">;
 
-interface IBaseSortOptions<T> {
-  value: T;
-  order: BaseSortOrder;
-}
+type IBaseCreateInfo<T extends IBase> = Omit<DocumentDefinition<T>, "_id" | "uuid" | "__v">;
 
-interface IBaseSearchInfo {
-  uuid?: string;
-
-  createdAt?: IBaseSearchOptions<Date>;
-  updatedAt?: IBaseSearchOptions<Date>;
-}
-
-interface IBaseCreateInfo {
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface IBaseUpdateInfo {
-  updatedAt: Date;
-}
+type IBaseUpdateInfo<T extends IBase> = Partial<Omit<T, "_id" | "uuid" | "__v" | "createdAt">> & { updatedAt: Date };
 
 export {
-  BaseSearchComparison,
-  BaseSortOrder,
   IBase,
-  IBaseSearchOptions,
-  IBaseSortOptions,
   IBaseSearchInfo,
   IBaseCreateInfo,
   IBaseUpdateInfo,

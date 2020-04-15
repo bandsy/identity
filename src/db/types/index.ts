@@ -8,11 +8,7 @@ import {
   IUserUpdateInfo,
 } from "./user";
 import {
-  BaseSearchComparison,
-  BaseSortOrder,
   IBase,
-  IBaseSearchOptions,
-  IBaseSortOptions,
   IBaseSearchInfo,
   IBaseCreateInfo,
   IBaseUpdateInfo,
@@ -27,11 +23,7 @@ export {
   IUserSearchInfo,
   IUserCreateInfo,
   IUserUpdateInfo,
-  BaseSearchComparison,
-  BaseSortOrder,
   IBase,
-  IBaseSearchOptions,
-  IBaseSortOptions,
   IBaseSearchInfo,
   IBaseCreateInfo,
   IBaseUpdateInfo,

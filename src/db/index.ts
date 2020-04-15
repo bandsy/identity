@@ -3,8 +3,9 @@ import fs from "fs";
 
 import mongoose from "mongoose";
 
-import { User, UserModel } from "./models";
-import { UserService } from "./services";
+import { UserModel } from "./models";
+import { Base } from "./schemas";
+import { UserService, IUserService } from "./services";
 import {
   IDbUpdateInfo,
   IDbDeleteInfo,
@@ -50,9 +51,9 @@ const connectDb = async (): Promise<void> => {
 };
 
 export {
-  User,
   UserModel,
   UserService,
+  IUserService,
   IDbUpdateInfo,
   IDbDeleteInfo,
   OauthServiceType,
@@ -63,4 +64,6 @@ export {
   IUserUpdateInfo,
 
   connectDb,
+
+  Base,
 };

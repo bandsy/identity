@@ -1,6 +1,7 @@
 import Base from "./base";
+import User from "./user";
 
 export {
-  // eslint-disable-next-line import/prefer-default-export
   Base,
+  User,
 };

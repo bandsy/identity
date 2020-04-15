@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 import { prop, modelOptions } from "@typegoose/typegoose";
 import muuid from "uuid-mongodb";
 import { Binary } from "bson";
@@ -9,6 +10,7 @@ import { IBase } from "../types";
     toObject: {
       virtuals: true,
     },
+    id: false,
   },
 })
 class Base implements IBase {

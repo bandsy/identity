@@ -1,7 +1,10 @@
-import { verifyEnvVars } from "./utils";
-import { connectDb } from "./db";
-import { startServer } from "./server";
+import "reflect-metadata";
 
+import { verifyEnvVars } from "./utils";
+import { connectDb, UserService } from "./db";
+// import { startServer } from "./server";
+
+// TODO: add a fn to verify these where needed
 const envVarsOk = verifyEnvVars([
   {
     envVar: "NODE_ENV",
@@ -73,5 +76,19 @@ if (!envVarsOk) {
 // TODO: better/separate way to handle env vars
 (async (): Promise<void> => {
   await connectDb();
-  await startServer();
+  // await startServer();
+
+  const userService = new UserService();
+  // await userService.create({
+  //   createdAt: new Date(),
+  //   updatedAt: new Date(),
+
+  //   accountType: UserAccountType.BANDSY,
+  //   email: "lukasznie1320@gmail.com",
+  //   verified: false,
+  // });
+
+  const users = await userService.findByEmail("lukasznie1320@gmail.com");
+
+  console.log(users);
 })();

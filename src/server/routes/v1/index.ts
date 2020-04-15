@@ -132,51 +132,51 @@ export default async (fastify: FastifyInstance): Promise<void> => {
   // - click confirmation link (to bandsy website)
   // - bandsy website makes api request with confirmation token
   // - on ok, finishes account creation and logs in user
-  fastify.post("/register", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
-    const { email, password }: RegistrationBody = request.body;
-    if (email == null || password == null) {
-      throw new Error("email and or password is null");
-    }
+  // fastify.post("/register", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+  //   const { email, password }: RegistrationBody = request.body;
+  //   if (email == null || password == null) {
+  //     throw new Error("email and or password is null");
+  //   }
 
-    try {
-      // generate verification code
-      // save code to database with expiry date (bound to email + pass combo)
-      // send email to user
-      // return ok code (or failure)
-      const { salt, passwordHash } = await generateSaltedPassword(password);
-      const verificationCode = await generateRandomString(24);
+  //   try {
+  //     // generate verification code
+  //     // save code to database with expiry date (bound to email + pass combo)
+  //     // send email to user
+  //     // return ok code (or failure)
+  //     const { salt, passwordHash } = await generateSaltedPassword(password);
+  //     const verificationCode = await generateRandomString(24);
 
-      const user = await UserService.createUser({
-        accountType: UserAccountType.BANDSY,
-        email,
-        salt,
-        passwordHash,
-        verificationCode,
-        verificationCodeExpiry: new Date(new Date().getTime() + (1000 * 60 * 5)),
-        verified: false,
-      });
+  //     const user = await UserService.createUser({
+  //       accountType: UserAccountType.BANDSY,
+  //       email,
+  //       salt,
+  //       passwordHash,
+  //       verificationCode,
+  //       verificationCodeExpiry: new Date(new Date().getTime() + (1000 * 60 * 5)),
+  //       verified: false,
+  //     });
 
-      // await transporter.sendMail({
-      //   from: `"${EMAIL_DISPLAY_NAME.trim()}" <${EMAIL_DISPLAY.trim()}>`,
-      //   to: email,
-      //   subject: "Bandsy account verification",
-      //   text: `verificationCode: ${verificationCode}`,
-      // });
+  //     // await transporter.sendMail({
+  //     //   from: `"${EMAIL_DISPLAY_NAME.trim()}" <${EMAIL_DISPLAY.trim()}>`,
+  //     //   to: email,
+  //     //   subject: "Bandsy account verification",
+  //     //   text: `verificationCode: ${verificationCode}`,
+  //     // });
 
-      reply.code(200);
+  //     reply.code(200);
 
-      return {
-        user,
-        uuid: user.uuid,
-      };
-    } catch (error) {
-      reply.code(500);
+  //     return {
+  //       user,
+  //       uuid: user.uuid,
+  //     };
+  //   } catch (error) {
+  //     reply.code(500);
 
-      return {
-        error: `error: ${error}`,
-      };
-    }
-  });
+  //     return {
+  //       error: `error: ${error}`,
+  //     };
+  //   }
+  // });
 
   // fastify.post("/verify", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
   //   const { email, verificationCode }: VerificationBody = request.body;

@@ -1,6 +1,6 @@
-import { UserService } from "./user";
+import { UserService, IUserService } from "./user";
 
 export {
-  // eslint-disable-next-line import/prefer-default-export
+  IUserService,
   UserService,
 };

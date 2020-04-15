@@ -443,6 +443,11 @@
   resolved "https://registry.yarnpkg.com/@types/color-name/-/color-name-1.1.1.tgz#1c1261bbeaa10a8055bbc5d8ab84b7b2afc846a0"
   integrity sha512-rr+OQyAjxze7GgWrSaJwydHStIhHq2lvY3BOC2Mj7KnzI7XK0Uw1TOOdI9lDoajEbSWLiYgoo4f1R51erQfhPQ==
 
+"@types/ejs@^3.0.2":
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/@types/ejs/-/ejs-3.0.2.tgz#b2eb8ac59af7057da7d93a37c54fee763e17b9bd"
+  integrity sha512-+nriFZYDz+C+6SWzJp0jHrGvyzL3Sg63u1vRlH1AfViyaT4oTod+MtfZ0YMNYXzO7ybFkdx4ZaBwBtLwdYkReQ==
+
 "@types/eslint-visitor-keys@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@types/eslint-visitor-keys/-/eslint-visitor-keys-1.0.0.tgz#1ee30d79544ca84d68d4b3cdb0af4f205663dd2d"
@@ -1560,6 +1565,11 @@ ecdsa-sig-formatter@1.0.11:
   dependencies:
     safe-buffer "^5.0.1"
 
+ejs@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/ejs/-/ejs-3.0.2.tgz#745b01cdcfe38c1c6a2da3bbb2d9957060a31226"
+  integrity sha512-IncmUpn1yN84hy2shb0POJ80FWrfGNY0cxO9f4v+/sG7qcBvAtVWUA1IdzY/8EYUmOVhoKJVdJjNd3AZcnxOjA==
+
 emoji-regex@^7.0.1:
   version "7.0.3"
   resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-7.0.3.tgz#933a04052860c85e83c122479c4748a8e4c72156"
@@ -2439,6 +2449,11 @@ inquirer@^7.0.0:
     string-width "^4.1.0"
     strip-ansi "^6.0.0"
     through "^2.3.6"
+
+inversify@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/inversify/-/inversify-5.0.1.tgz#500d709b1434896ce5a0d58915c4a4210e34fb6e"
+  integrity sha512-Ieh06s48WnEYGcqHepdsJUIJUXpwH5o5vodAX+DK2JA/gjy4EbEcQZxw+uFfzysmKjiLXGYwNG3qDZsKVMcINQ==
 
 ip-regex@^2.1.0:
   version "2.1.0"
