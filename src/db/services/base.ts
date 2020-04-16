@@ -34,6 +34,7 @@ abstract class BaseService<T extends BaseDoc> implements IBaseService<T> {
   }
 
   // TODO: pagination and sort
+  // TODO: convert 'uuid' param to _id - currently cant search by id here
   public async find(searchInfo: IBaseSearchInfo<T>): Promise<DocumentDefinition<T>[]> {
     try {
       // this is safe to do as _id and __v arent required params

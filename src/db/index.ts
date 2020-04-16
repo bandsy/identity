@@ -3,9 +3,10 @@ import fs from "fs";
 
 import mongoose from "mongoose";
 
-import { UserModel } from "./models";
-import { Base } from "./schemas";
-import { UserService, IUserService } from "./services";
+// TODO: clean up these imports!
+import { UserModel, VerificationModel } from "./models";
+import { Base, User, Verification } from "./schemas";
+import { UserService, IUserService, VerificationService } from "./services";
 import {
   IDbUpdateInfo,
   IDbDeleteInfo,
@@ -66,4 +67,9 @@ export {
   connectDb,
 
   Base,
+
+  Verification,
+  VerificationModel,
+  User,
+  VerificationService,
 };

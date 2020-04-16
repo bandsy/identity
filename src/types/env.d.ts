@@ -19,5 +19,8 @@ declare namespace NodeJS {
     MONGO_HOST: string;
     MONGO_DB: string;
     MONGO_CERT: string;
+
+    JWT_PRIVATE_KEY: string;
+    JWT_PUBLIC_KEY: string;
   }
 }

@@ -1,301 +1,599 @@
-import { randomBytes, createHmac } from "crypto";
 import { ServerResponse } from "http";
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-// import { createTransport } from "nodemailer";
+import { parseBool } from "../../../utils";
+import {
+  generateSaltedPassword,
+  generateRandomToken,
+  IEmailTransportOptions,
+  VerificationEmail,
+  RecoveryEmail,
+  saltPassword,
+  jwtSign,
+  IIdentityJwtContent,
+} from "../../helpers";
+import {
+  UserAccountType,
+  UserService,
+  VerificationService,
+  OauthServiceType,
+} from "../../../db";
 
-// import { parseBool } from "../../../utils";
-import { UserService, UserAccountType } from "../../../db";
+// TODO: split this up a bit, maybe make a wrapper class (with decorator shit ofc)
+// and pass deps via dependency injection
 
-// const {
-//   TRANS_HOST,
-//   TRANS_PORT,
-//   TRANS_SECURE,
-//   TRANS_EMAIL,
-//   TRANS_EMAIL_PASS,
+// NOTE: the fact that these are typed as possibly null doesnt mean theyre not required,
+// it means that we dont know if were gonna get them from the user - should be checked at runtime!!!
+interface IRegisterRouteBody {
+  accountType?: UserAccountType;
 
-//   EMAIL_DISPLAY,
-//   EMAIL_DISPLAY_NAME,
-// } = process.env;
-
-// const transporter = createTransport({
-//   host: TRANS_HOST.trim(),
-//   port: Number.parseInt(TRANS_PORT.trim(), 10),
-//   secure: parseBool(TRANS_SECURE.trim()),
-//   auth: {
-//     user: TRANS_EMAIL.trim(),
-//     pass: TRANS_EMAIL_PASS.trim(),
-//   },
-// });
-
-// const emailVerificationCodes = [];
-
-interface RegistrationBody {
   email?: string;
   password?: string;
+
+  oauthService?: OauthServiceType;
+  accessToken?: string;
 }
 
-// enum VerificationType {
-//   EMAIL = "email",
-//   OAUTH = "oauth",
-// }
-
-enum OauthServiceType {
-  DISCORD = "discord",
-}
-
-interface VerificationBody {
+interface IVerifyRouteBody {
   email?: string;
   verificationCode?: string;
 }
 
-interface OauthVerificationBody {
-  oauthServiceType?: OauthServiceType;
-  verificationCode?: string;
+interface IVerifyResendRouteBody {
+  email?: string;
 }
 
-const generateRandomString = (length: number): Promise<string> => new Promise((resolve, reject) => {
-  randomBytes(Math.ceil(length / 2), (error, buffer) => {
-    if (error != null) {
-      return reject(error);
-    }
+interface ILoginRouteBody {
+  accountType?: UserAccountType;
 
-    return resolve(buffer.toString("hex").slice(0, length));
-  });
-});
+  email?: string;
+  password?: string;
 
-interface ISaltedPassword {
-  salt: string;
-  passwordHash: string;
+  oauthService?: OauthServiceType;
+  accessToken?: string;
 }
 
-const saltPassword = (password: string, salt: string): Promise<ISaltedPassword> => new Promise(resolve => {
-  const hash = createHmac("sha512", salt);
-  hash.update(password);
+interface IRecoverRouteBody {
+  email?: string;
+}
 
-  const passwordHash = hash.digest("hex");
+interface IRecoverVerifyRouteBody {
+  email?: string;
+  recoveryCode?: string;
+  newPassword?: string;
+}
 
-  resolve({
-    salt,
-    passwordHash,
-  });
-});
+// yes i realise this can be done in a better way
+const {
+  TRANS_HOST,
+  TRANS_PORT,
+  TRANS_SECURE,
+  TRANS_EMAIL,
+  TRANS_EMAIL_PASS,
 
-const generateSaltedPassword = async (password: string): Promise<ISaltedPassword> => saltPassword(password, await generateRandomString(24));
+  JWT_PRIVATE_KEY,
+} = process.env;
+
+const userService = new UserService();
+const verificationService = new VerificationService();
+
+// TODO: the boolean cast wont be needed when i write that runtime type checker
+const transportOptions: IEmailTransportOptions = {
+  host: TRANS_HOST.trim(),
+  port: parseInt(TRANS_PORT.trim(), 10),
+  secure: parseBool(TRANS_SECURE.trim()) as boolean,
+  auth: {
+    user: TRANS_EMAIL.trim(),
+    pass: TRANS_EMAIL_PASS.trim(),
+  },
+};
 
 // TODO: verification code timeout
 // TODO: salt pass
 // TODO: make email field unique
 // TODO: log the user in at verification
 // TODO: make opaque token unique
+
+// TODO: runtime type validation, could be used for env vars as well!!!
+// TODO: obfuscate error messages in production
+// TODO: bandsy identity error codes to go along with messages
+// TODO: ratelimiting and blacklists!!!
 export default async (fastify: FastifyInstance): Promise<void> => {
+  // // admin routes
   // fastify.get("/", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
-  //   const { opaqueToken } = request.cookies;
 
-  //   if (opaqueToken == null) {
-  //     throw new Error("opaqueToken not set");
-  //   }
-
-  //   try {
-  //     const users = await UserService.findUsers({
-  //       opaqueToken,
-  //     });
-
-  //     if (users.length === 0) {
-  //       // TODO: yes this obviously shouldnt be a 500
-  //       throw new Error("no matching opaqueToken found");
-  //     }
-
-  //     if (users.length > 1) {
-  //       throw new Error("something is SEVERELY fucked with our opaqueToken security");
-  //     }
-
-  //     const user = users[0];
-
-  //     reply.code(200);
-
-  //     return {
-  //       user,
-  //     };
-  //   } catch (error) {
-  //     reply.code(500);
-
-  //     return {
-  //       error: `error: ${error}`,
-  //     };
-  //   }
   // });
 
-  // acount creation (email + pass):
-  // - send email + pass to server
-  // - receive email confirmation link
-  // - click confirmation link (to bandsy website)
-  // - bandsy website makes api request with confirmation token
-  // - on ok, finishes account creation and logs in user
-  // fastify.post("/register", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
-  //   const { email, password }: RegistrationBody = request.body;
-  //   if (email == null || password == null) {
-  //     throw new Error("email and or password is null");
-  //   }
+  // fastify.post("/", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
 
-  //   try {
-  //     // generate verification code
-  //     // save code to database with expiry date (bound to email + pass combo)
-  //     // send email to user
-  //     // return ok code (or failure)
-  //     const { salt, passwordHash } = await generateSaltedPassword(password);
-  //     const verificationCode = await generateRandomString(24);
-
-  //     const user = await UserService.createUser({
-  //       accountType: UserAccountType.BANDSY,
-  //       email,
-  //       salt,
-  //       passwordHash,
-  //       verificationCode,
-  //       verificationCodeExpiry: new Date(new Date().getTime() + (1000 * 60 * 5)),
-  //       verified: false,
-  //     });
-
-  //     // await transporter.sendMail({
-  //     //   from: `"${EMAIL_DISPLAY_NAME.trim()}" <${EMAIL_DISPLAY.trim()}>`,
-  //     //   to: email,
-  //     //   subject: "Bandsy account verification",
-  //     //   text: `verificationCode: ${verificationCode}`,
-  //     // });
-
-  //     reply.code(200);
-
-  //     return {
-  //       user,
-  //       uuid: user.uuid,
-  //     };
-  //   } catch (error) {
-  //     reply.code(500);
-
-  //     return {
-  //       error: `error: ${error}`,
-  //     };
-  //   }
   // });
 
-  // fastify.post("/verify", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
-  //   const { email, verificationCode }: VerificationBody = request.body;
-  //   if (email == null || verificationCode == null) {
-  //     throw new Error("email and or verificationCode is null");
-  //   }
+  // fastify.patch("/", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
 
-  //   try {
-  //     // check if code exists
-  //     // check if code not expired
-  //     // add user to database
-  //     // send ok code (or failure)
-  //     // send opaque token
-  //     const user = await UserService.findUserByEmail(email);
-  //     if (user.verified) {
-  //       // TODO: handle this some other way cos right now random peeps can go check if an email is verified
-  //       // TODO: ***IMPORTANT*** same as above, make sure with evertything were not returning any more info than is necessary
-  //       throw new Error("already verified");
-  //     }
-
-  //     if (user.verificationCodeExpiry == null || new Date() > new Date(user.verificationCodeExpiry)) {
-  //       // TODO: send new verification code
-  //       throw new Error("verification code expired");
-  //     }
-
-  //     if (user.verificationCode !== verificationCode) {
-  //       throw new Error("verification codes dont match");
-  //     }
-
-  //     const opaqueToken = await generateRandomString(24);
-  //     const opaqueTokenExpiry = new Date(new Date().getTime() + (1000 * 60 * 5));
-
-  //     await UserService.updateUser(user.uuid, {
-  //       opaqueToken,
-  //       opaqueTokenExpiry,
-  //       verificationCode: undefined,
-  //       verificationCodeExpiry: undefined,
-  //       verified: true,
-  //     });
-
-  //     reply.code(200);
-
-  //     return {
-  //       opaqueToken,
-  //       opaqueTokenExpiry,
-  //     };
-  //   } catch (error) {
-  //     reply.code(500);
-
-  //     return {
-  //       error: `error: ${error}`,
-  //     };
-  //   }
   // });
 
-  // fastify.post("/verify/oauth", async (request: FastifyRequest) => {
-  //   const { oauthServiceType, verificationCode }: OauthVerificationBody = request.body;
+  // fastify.delete("/", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
 
-  //   // verify if correct oauth service provided
-  //   // query service with code
-  //   // add user to database
-  //   // send ok code (or failure)
-  //   // send opaque token
-
-  //   return {
-  //     oauthServiceType,
-  //     verificationCode,
-  //   };
   // });
 
-  // fastify.post("/login", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
-  //   const { email, password }: RegistrationBody = request.body;
-  //   if (email == null || password == null) {
-  //     throw new Error("email and or password is null");
-  //   }
+  // // main user routes
+  // fastify.get("/@me", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
 
-  //   if (request.cookies.opaqueToken != null) {
-  //     throw new Error("already logged in (supposedly)");
-  //   }
-
-  //   try {
-  //     const user = await UserService.findUserByEmail(email);
-  //     if (user.salt == null || user.passwordHash == null) {
-  //       throw new Error("db user does not have salt or passwordHash");
-  //     }
-
-  //     const { passwordHash } = await saltPassword(password, user.salt);
-  //     if (user.passwordHash !== passwordHash) {
-  //       throw new Error("passwords hashes dont match");
-  //     }
-
-  //     const opaqueToken = await generateRandomString(24);
-  //     const opaqueTokenExpiry = new Date(new Date().getTime() + (1000 * 60 * 5));
-
-  //     await UserService.updateUser(user.uuid, {
-  //       opaqueToken,
-  //       opaqueTokenExpiry,
-  //     });
-
-  //     reply.code(200);
-
-  //     return {
-  //       opaqueToken,
-  //       opaqueTokenExpiry,
-  //     };
-  //   } catch (error) {
-  //     reply.code(500);
-
-  //     return {
-  //       error: `error: ${error}`,
-  //     };
-  //   }
   // });
 
-  // fastify.post("/login/oauth", async (request: FastifyRequest) => {
-  //   const rawrxd = request;
+  // fastify.patch("/@me", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
 
-  //   return {
-  //     rawrxd,
-  //   };
   // });
+
+  // fastify.delete("/@me", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // // main user routes - activity
+  // fastify.get("/@me/activity", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // // main user routes - 2fa
+  // fastify.post("/@me/2fa", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // fastify.delete("/@me/2fa", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // fastify.get("/@me/2fa/codes", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // // main user routes - links
+  // fastify.get("/@me/links", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // fastify.post("/@me/links", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // fastify.delete("/@me/links", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // // main user routes - payments
+  // fastify.get("/@me/payments", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // fastify.post("/@me/payments", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // fastify.patch("/@me/payments", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // fastify.delete("/@me/payments", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+
+  // });
+
+  // main visitor routes
+  fastify.post("/register", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    // bandsy and oauth acc type route
+
+    const { accountType }: IRegisterRouteBody = request.body;
+
+    if (accountType === UserAccountType.BANDSY) {
+      const { email, password }: IRegisterRouteBody = request.body;
+
+      if (email == null || password == null) {
+        reply.code(400);
+
+        return {
+          error: "email or password not specified",
+        };
+      }
+
+      try {
+        const { salt, passwordHash } = await generateSaltedPassword(password);
+
+        // TODO: maybe do something so createdAt and updatedAt get set automatically
+        // TODO: also maybe make it so those fields cant be tampered with?
+        const { uuid } = await userService.create({
+          accountType,
+
+          email,
+          verified: false,
+
+          salt,
+          passwordHash,
+
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        const verificationCode = await generateRandomToken(24);
+
+        await verificationService.create({
+          userUuid: uuid,
+          userEmail: email,
+
+          code: verificationCode,
+          // TODO: set this to a constant and make it longer than 5 mins lmao
+          validUntil: new Date(new Date().getTime() + (1000 * 60 * 5)),
+
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        // TODO: put an actual username there?
+        const verificationEmail = new VerificationEmail(transportOptions);
+        await verificationEmail.send(email, {
+          username: "cunty mcjim",
+          verificationCode,
+        });
+      } catch (error) {
+        reply.code(500);
+
+        return {
+          error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+        };
+      }
+
+      reply.code(204);
+
+      return null;
+    }
+
+    if (accountType === UserAccountType.OAUTH) {
+      reply.code(501);
+
+      return {
+        error: "not implemented yet",
+      };
+    }
+
+    reply.code(400);
+
+    return {
+      error: "invalid account type",
+    };
+  });
+
+  // NOTE: we dont have to check account type here as the POST /register route does that
+  // already and will not create a verification code for non 'bandsy' account types
+  fastify.post("/verify", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    // bandsy acc type only route
+
+    const { email, verificationCode }: IVerifyRouteBody = request.body;
+
+    if (email == null || verificationCode == null) {
+      reply.code(400);
+
+      return {
+        error: "email or verification code not specified",
+      };
+    }
+
+    try {
+      // NOTE: there cannot be more than one; the code field is marked as unique in mongo
+      const verification = (await verificationService.find({
+        userEmail: email,
+        code: verificationCode,
+      }))[0];
+
+      if (verification == null) {
+        reply.code(400);
+
+        return {
+          error: "verification code for this email not found",
+        };
+      }
+
+      if (verification.validUntil < new Date()) {
+        reply.code(400);
+
+        return {
+          error: "verification code expired",
+        };
+      }
+
+      await userService.update(verification.userUuid, {
+        verified: true,
+
+        updatedAt: new Date(),
+      });
+    } catch (error) {
+      reply.code(500);
+
+      return {
+        error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+      };
+    }
+
+    reply.code(204);
+
+    return null;
+  });
+
+  // TODO (IMPORTANT): remove other verification codes when you request a new one
+  fastify.post("/verify/resend", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    const { email }: IVerifyResendRouteBody = request.body;
+
+    if (email == null) {
+      reply.code(400);
+
+      return {
+        error: "email not specified",
+      };
+    }
+
+    try {
+      const user = await userService.findByEmail(email);
+
+      if (user == null) {
+        reply.code(400);
+
+        return {
+          error: "account with this email not found",
+        };
+      }
+
+      if (user.accountType !== UserAccountType.BANDSY) {
+        reply.code(400);
+
+        return {
+          error: "account verification not supported for non 'bandsy' type accounts (3rd party)",
+        };
+      }
+
+      if (user.verified) {
+        reply.code(400);
+
+        return {
+          error: "account already verified",
+        };
+      }
+
+      // NOTE: we just create a new verification code rather than resending the old one
+      // this requires less effort and is less complex - less change of bugs!
+
+      // TODO: this is duped code (same as register), maybe refactor it at some point soon:tm:
+      const verificationCode = await generateRandomToken(24);
+
+      await verificationService.create({
+        userUuid: user.uuid,
+        userEmail: email,
+
+        code: verificationCode,
+        // TODO: set this to a constant and make it longer than 5 mins lmao
+        validUntil: new Date(new Date().getTime() + (1000 * 60 * 5)),
+
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // TODO: put an actual username there?
+      const verificationEmail = new VerificationEmail(transportOptions);
+      await verificationEmail.send(email, {
+        username: "cunty mcjim",
+        verificationCode,
+      });
+    } catch (error) {
+      reply.code(500);
+
+      return {
+        error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+      };
+    }
+
+    reply.code(204);
+
+    return null;
+  });
+
+  // TODO: take 2fa into account, no 2fa for non 'bandsy' type accounts (already handled by 3rd party)
+  fastify.post("/login", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    const { accountType }: ILoginRouteBody = request.body;
+
+    if (accountType === UserAccountType.BANDSY) {
+      const { email, password }: IRegisterRouteBody = request.body;
+
+      if (email == null || password == null) {
+        reply.code(400);
+
+        return {
+          error: "email or password not specified",
+        };
+      }
+
+      try {
+        const user = await userService.findByEmail(email);
+
+        if (user == null) {
+          reply.code(400);
+
+          return {
+            error: "user with this email not found",
+          };
+        }
+
+        // salt should be a string if account type is bandsy
+        // the worst that can happen otherwise is the passwords not matching
+        const { passwordHash } = await saltPassword(password, user.salt as string);
+
+        // dont want to make account checking easier
+        // idk if this would actually help but ye, ill put it in just in case lol
+        if (passwordHash !== user.passwordHash) {
+          reply.code(400);
+
+          return {
+            error: `incorrect email or password ${process.env.NODE_ENV === "dev" ? "(password)" : ""}`,
+          };
+        }
+
+        const signedJwt = await jwtSign<IIdentityJwtContent>({
+          uuid: user.uuid,
+          email: user.email,
+        }, JWT_PRIVATE_KEY, {
+          // TODO: set this to a constant and make it longer than 15 mins lmao
+          expiresIn: 1000 * 60 * 15,
+        });
+
+        reply.code(200);
+
+        return {
+          token: signedJwt,
+        };
+      } catch (error) {
+        reply.code(500);
+
+        return {
+          error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+        };
+      }
+    }
+
+    if (accountType === UserAccountType.OAUTH) {
+      reply.code(501);
+
+      return {
+        error: "not implemented yet",
+      };
+    }
+
+    reply.code(400);
+
+    return {
+      error: "invalid account type",
+    };
+  });
+
+  // TODO (IMPORTANT): remove other recovery codes when you request a new one
+  fastify.post("/recover", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    const { email }: IRecoverRouteBody = request.body;
+
+    if (email == null) {
+      reply.code(400);
+
+      return {
+        error: "email not specified",
+      };
+    }
+
+    try {
+      const user = await userService.findByEmail(email);
+
+      if (user == null) {
+        reply.code(400);
+
+        return {
+          error: "account with this email not found",
+        };
+      }
+
+      if (user.accountType !== UserAccountType.BANDSY) {
+        reply.code(400);
+
+        return {
+          error: "account recovery not supported for non 'bandsy' type accounts (3rd party)",
+        };
+      }
+
+      // NOTE: we can just reuse the verification code system here
+
+      // TODO: this is duped code (same as register), maybe refactor it at some point soon:tm:
+      const recoveryCode = await generateRandomToken(24);
+
+      await verificationService.create({
+        userUuid: user.uuid,
+        userEmail: email,
+
+        code: recoveryCode,
+        // TODO: set this to a constant and make it longer than 5 mins lmao
+        validUntil: new Date(new Date().getTime() + (1000 * 60 * 5)),
+
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // TODO: put an actual username there?
+      const recoveryEmail = new RecoveryEmail(transportOptions);
+      await recoveryEmail.send(email, {
+        username: "cunty mcjim",
+        recoveryCode,
+      });
+    } catch (error) {
+      reply.code(500);
+
+      return {
+        error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+      };
+    }
+
+    reply.code(204);
+
+    return null;
+  });
+
+  // NOTE: we dont have to check account type here as the POST /register route does that
+  // already and will not create a recovery code for non 'bandsy' account types
+  fastify.post("/recover/verify", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    // NOTE: a lot of the code here will be duplicated from PORT /verify,
+    // try to refactor it asap!
+
+    const { email, recoveryCode, newPassword }: IRecoverVerifyRouteBody = request.body;
+
+    if (email == null || recoveryCode == null || newPassword == null) {
+      reply.code(400);
+
+      return {
+        error: "email, recovery code, or new password not specified",
+      };
+    }
+
+    try {
+      // NOTE: there cannot be more than one; the code field is marked as unique in mongo
+      // TODO: expand on VerificationService to handle this shit (cos its duplicated in quite a few places!)
+      const verification = (await verificationService.find({
+        userEmail: email,
+        code: recoveryCode,
+      }))[0];
+
+      if (verification == null) {
+        reply.code(400);
+
+        return {
+          error: "recovery code for this email not found",
+        };
+      }
+
+      if (verification.validUntil < new Date()) {
+        reply.code(400);
+
+        return {
+          error: "recovery code expired",
+        };
+      }
+
+      const { salt, passwordHash } = await generateSaltedPassword(newPassword);
+
+      await userService.update(verification.userUuid, {
+        salt,
+        passwordHash,
+
+        updatedAt: new Date(),
+      });
+    } catch (error) {
+      reply.code(500);
+
+      return {
+        error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+      };
+    }
+
+    reply.code(204);
+
+    return null;
+  });
 };

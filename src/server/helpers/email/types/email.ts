@@ -8,15 +8,19 @@ import ejs from "ejs";
 import { IEmailTransportOptions } from "./transporter";
 
 const DEFAULT_DISPLAY_NAMME = "Bandsy Identity";
+const DEFAULT_DISPLAY = "identity.bandsy@feinwaru.com";
 
 interface IBaseEmailOptions {
   username: string;
 }
 
+// TODO: make emails better, as it currently is with all the inheritance, its probably a bit overkill lmao
 abstract class Email<T extends IBaseEmailOptions> {
   protected transporter: Mail;
 
   protected displayName: string;
+
+  protected display: string;
 
   protected template: string;
 
@@ -26,7 +30,9 @@ abstract class Email<T extends IBaseEmailOptions> {
     this.transporter = createTransport(transportOptions);
 
     this.displayName = DEFAULT_DISPLAY_NAMME;
-    this.template = fs.readFileSync(path.join(__dirname, "templates", templateName)).toString();
+    this.display = DEFAULT_DISPLAY;
+
+    this.template = fs.readFileSync(path.join(__dirname, "..", "..", "..", "..", "..", "templates", templateName)).toString();
   }
 
   // TODO: better send info
@@ -35,10 +41,10 @@ abstract class Email<T extends IBaseEmailOptions> {
       const render = ejs.render(this.template, options);
 
       return (await this.transporter.sendMail({
-        from: `"${this.displayName}" <${this.displayName}>`,
+        from: `"${this.displayName}" <${this.display}>`,
         to: targetEmail,
         subject: this.subject,
-        text: render,
+        html: render,
       }));
     } catch (error) {
       throw new Error(`failed to send email ( targetEmail: ${targetEmail}, options: ${options} ): ${error}`);

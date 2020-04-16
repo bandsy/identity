@@ -4,6 +4,8 @@ import {
   IEmailTransportOptions,
   IVerificationEmailOptions,
   VerificationEmail,
+  RecoveryEmail,
+  IRecoveryEmailOptions,
 } from "./types";
 
 export {
@@ -12,4 +14,6 @@ export {
   IEmailTransportOptions,
   IVerificationEmailOptions,
   VerificationEmail,
+  RecoveryEmail,
+  IRecoveryEmailOptions,
 };

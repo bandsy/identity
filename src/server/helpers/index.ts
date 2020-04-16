@@ -7,6 +7,8 @@ import {
   IEmailTransportOptions,
   IVerificationEmailOptions,
   VerificationEmail,
+  RecoveryEmail,
+  IRecoveryEmailOptions,
 } from "./email";
 
 export {
@@ -24,4 +26,6 @@ export {
   IEmailTransportOptions,
   IVerificationEmailOptions,
   VerificationEmail,
+  RecoveryEmail,
+  IRecoveryEmailOptions,
 };

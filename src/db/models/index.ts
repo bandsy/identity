@@ -1,6 +1,7 @@
 import { UserModel } from "./user";
+import { VerificationModel } from "./verification";
 
 export {
-  // eslint-disable-next-line import/prefer-default-export
   UserModel,
+  VerificationModel,
 };

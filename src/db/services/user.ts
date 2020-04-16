@@ -12,6 +12,7 @@ interface IUserService extends IBaseService<User> {
 // workaround cos community made types are fine, until you try to get 2 libs working together...
 type UserDoc = User & Document;
 
+// TODO: redefine the other methods to use the proper option interfaces
 class UserService extends BaseService<UserDoc> implements IUserService {
   constructor() {
     super();
