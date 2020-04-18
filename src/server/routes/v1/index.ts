@@ -11,13 +11,18 @@ import {
   saltPassword,
   jwtSign,
   IIdentityJwtContent,
+  exchangeToken,
+  fetchUserData,
+  jwtVerify,
 } from "../../helpers";
 import {
   UserAccountType,
   UserService,
   VerificationService,
   OauthServiceType,
+  IVerificationType,
 } from "../../../db";
+import { generateSecret, verifyTOTP } from "../../helpers/2fa";
 
 // TODO: split this up a bit, maybe make a wrapper class (with decorator shit ofc)
 // and pass deps via dependency injection
@@ -51,6 +56,8 @@ interface ILoginRouteBody {
 
   oauthService?: OauthServiceType;
   accessToken?: string;
+
+  mfaCode?: string;
 }
 
 interface IRecoverRouteBody {
@@ -63,6 +70,17 @@ interface IRecoverVerifyRouteBody {
   newPassword?: string;
 }
 
+// NOTE: the code that we want here, we need as a number but all stuff may
+// be strings so this is safer
+interface IMfaRouteCreateBody {
+  secret: string;
+  mfaCode: string;
+}
+
+interface IMfaRouteBody {
+  mfaCode: string;
+}
+
 // yes i realise this can be done in a better way
 const {
   TRANS_HOST,
@@ -72,6 +90,7 @@ const {
   TRANS_EMAIL_PASS,
 
   JWT_PRIVATE_KEY,
+  JWT_PUBLIC_KEY,
 } = process.env;
 
 const userService = new UserService();
@@ -99,6 +118,15 @@ const transportOptions: IEmailTransportOptions = {
 // TODO: bandsy identity error codes to go along with messages
 // TODO: ratelimiting and blacklists!!!
 export default async (fastify: FastifyInstance): Promise<void> => {
+  // temp for testing
+  fastify.get("/oauth-test/redirect", async (request: FastifyRequest) => {
+    console.log(request.query);
+
+    return {
+      query: request.query,
+    };
+  });
+
   // // admin routes
   // fastify.get("/", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
 
@@ -134,18 +162,367 @@ export default async (fastify: FastifyInstance): Promise<void> => {
 
   // });
 
-  // // main user routes - 2fa
-  // fastify.post("/@me/2fa", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+  // main user routes - 2fa
 
-  // });
+  // check: token, account activated
+  // TODO: maybe make a hook that checks for the token
+  // TODO: auto handle thing for all catches would be nice (theyre all lit the same!)
+  fastify.get("/2fa/secret", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    // need: 2fa disabled, bandsy acc type
+    const { token } = request.cookies;
 
-  // fastify.delete("/@me/2fa", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    if (token == null) {
+      reply.code(400);
 
-  // });
+      return {
+        error: "token not found but required",
+      };
+    }
 
-  // fastify.get("/@me/2fa/codes", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    try {
+      const jwt = await jwtVerify<IIdentityJwtContent>(token, JWT_PUBLIC_KEY);
 
-  // });
+      const user = await userService.findById(jwt.uuid);
+
+      if (user == null) {
+        reply.code(400);
+
+        return {
+          error: "user not found",
+        };
+      }
+
+      if (user.mfaEnabled) {
+        reply.code(400);
+
+        return {
+          error: "2fa already enabled on this account (you dont need these codes)",
+        };
+      }
+
+      if (jwt.accountType !== UserAccountType.BANDSY) {
+        reply.code(400);
+
+        return {
+          error: "2fa not supported for non 'bandsy' type accounts (3rd party)",
+        };
+      }
+
+      const secret = generateSecret();
+
+      reply.code(200);
+
+      return {
+        secret,
+      };
+    } catch (error) {
+      reply.code(500);
+
+      return {
+        error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+      };
+    }
+  });
+
+  fastify.post("/@me/2fa", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    // need: 2fa disabled, bandsy acc type, 2fa secret, 2fa code
+    const { token } = request.cookies;
+
+    if (token == null) {
+      reply.code(400);
+
+      return {
+        error: "token not found but required",
+      };
+    }
+
+    try {
+      const jwt = await jwtVerify<IIdentityJwtContent>(token, JWT_PUBLIC_KEY);
+
+      if (jwt.accountType !== UserAccountType.BANDSY) {
+        reply.code(400);
+
+        return {
+          error: "2fa not supported for non 'bandsy' type accounts (3rd party)",
+        };
+      }
+
+      const user = await userService.findById(jwt.uuid);
+
+      if (user == null) {
+        reply.code(400);
+
+        return {
+          error: "incorrect user id in token",
+        };
+      }
+
+      if (user.mfaEnabled) {
+        reply.code(400);
+
+        return {
+          error: "2fa already enabled for this user",
+        };
+      }
+
+      const { secret, mfaCode }: IMfaRouteCreateBody = request.body;
+
+      if (secret == null || mfaCode == null || Number.isNaN(parseInt(mfaCode, 10))) {
+        reply.code(400);
+
+        return {
+          error: "secret or code not specified or incorrectly formatted",
+        };
+      }
+
+      if (!verifyTOTP(parseInt(mfaCode, 10), secret)) {
+        reply.code(400);
+
+        return {
+          error: "incorrect secret and code combo",
+        };
+      }
+
+      // TODO: make the number of recovery codes constant, maybe enforced in schema?
+      const mfaRecoveryCodes = (await Promise.all(new Array(12).map(() => generateRandomToken(6)))).map(e => ({
+        code: e,
+        valid: true,
+      }));
+
+      await userService.update(jwt.uuid, {
+        mfaEnabled: true,
+        mfaSecret: secret,
+        mfaRecoveryCodes,
+
+        updatedAt: new Date(),
+      });
+
+      reply.code(200);
+
+      return {
+        recoveryCodes: mfaRecoveryCodes,
+      };
+    } catch (error) {
+      reply.code(500);
+
+      return {
+        error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+      };
+    }
+  });
+
+  fastify.delete("/@me/2fa", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    // need: 2fa enabled, bandsy acc type, 2fa code
+    const { token } = request.cookies;
+
+    if (token == null) {
+      reply.code(400);
+
+      return {
+        error: "token not found but required",
+      };
+    }
+
+    try {
+      const jwt = await jwtVerify<IIdentityJwtContent>(token, JWT_PUBLIC_KEY);
+
+      if (jwt.accountType !== UserAccountType.BANDSY) {
+        reply.code(400);
+
+        return {
+          error: "2fa not supported for non 'bandsy' type accounts (3rd party)",
+        };
+      }
+
+      const user = await userService.findById(jwt.uuid);
+
+      if (user == null || user.mfaSecret == null) {
+        reply.code(400);
+
+        return {
+          error: "incorrect user id in token (or mfaSecret null for some bizzare reason)",
+        };
+      }
+
+      if (!user.mfaEnabled) {
+        reply.code(400);
+
+        return {
+          error: "2fa not enabled for this user (cant remove it lol)",
+        };
+      }
+
+      const { mfaCode }: IMfaRouteBody = request.body;
+
+      if (!verifyTOTP(parseInt(mfaCode, 10), user.mfaSecret)) {
+        reply.code(400);
+
+        return {
+          error: "incorrect secret and code combo",
+        };
+      }
+
+      await userService.update(jwt.uuid, {
+        mfaEnabled: false,
+        mfaSecret: undefined,
+        mfaRecoveryCodes: [],
+
+        updatedAt: new Date(),
+      });
+
+      reply.code(204);
+
+      return null;
+    } catch (error) {
+      reply.code(500);
+
+      return {
+        error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+      };
+    }
+  });
+
+  fastify.get("/@me/2fa/codes", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    // need: 2fa enabled, bandsy acc type, 2fa code
+    const { token } = request.cookies;
+
+    if (token == null) {
+      reply.code(400);
+
+      return {
+        error: "token not found but required",
+      };
+    }
+
+    try {
+      const jwt = await jwtVerify<IIdentityJwtContent>(token, JWT_PUBLIC_KEY);
+
+      if (jwt.accountType !== UserAccountType.BANDSY) {
+        reply.code(400);
+
+        return {
+          error: "2fa not supported for non 'bandsy' type accounts (3rd party)",
+        };
+      }
+
+      const user = await userService.findById(jwt.uuid);
+
+      if (user == null || user.mfaSecret == null) {
+        reply.code(400);
+
+        return {
+          error: "incorrect user id in token (or mfaSecret null for some bizzare reason)",
+        };
+      }
+
+      if (!user.mfaEnabled) {
+        reply.code(400);
+
+        return {
+          error: "2fa not enabled for this user (youve got no recovery codes lel)",
+        };
+      }
+
+      const { mfaCode }: IMfaRouteBody = request.body;
+
+      if (!verifyTOTP(parseInt(mfaCode, 10), user.mfaSecret)) {
+        reply.code(400);
+
+        return {
+          error: "incorrect secret and code combo",
+        };
+      }
+
+      reply.code(200);
+
+      return {
+        recoveryCodes: user.mfaRecoveryCodes,
+      };
+    } catch (error) {
+      reply.code(500);
+
+      return {
+        error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+      };
+    }
+  });
+
+  fastify.post("/@me/2fa/codes/refresh", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    // need: 2fa enabled, bandsy acc type, 2fa code
+    const { token } = request.cookies;
+
+    if (token == null) {
+      reply.code(400);
+
+      return {
+        error: "token not found but required",
+      };
+    }
+
+    try {
+      const jwt = await jwtVerify<IIdentityJwtContent>(token, JWT_PUBLIC_KEY);
+
+      if (jwt.accountType !== UserAccountType.BANDSY) {
+        reply.code(400);
+
+        return {
+          error: "2fa not supported for non 'bandsy' type accounts (3rd party)",
+        };
+      }
+
+      const user = await userService.findById(jwt.uuid);
+
+      if (user == null || user.mfaSecret == null) {
+        reply.code(400);
+
+        return {
+          error: "incorrect user id in token (or mfaSecret null for some bizzare reason)",
+        };
+      }
+
+      if (!user.mfaEnabled) {
+        reply.code(400);
+
+        return {
+          error: "2fa not enabled for this user (youve got no recovery codes lel)",
+        };
+      }
+
+      const { mfaCode }: IMfaRouteBody = request.body;
+
+      if (!verifyTOTP(parseInt(mfaCode, 10), user.mfaSecret)) {
+        reply.code(400);
+
+        return {
+          error: "incorrect secret and code combo",
+        };
+      }
+
+      // TODO: make the number of recovery codes constant, maybe enforced in schema?
+      const mfaRecoveryCodes = (await Promise.all(new Array(12).map(() => generateRandomToken(6)))).map(e => ({
+        code: e,
+        valid: true,
+      }));
+
+      await userService.update(jwt.uuid, {
+        mfaRecoveryCodes,
+
+        updatedAt: new Date(),
+      });
+
+      reply.code(200);
+
+      return {
+        recoveryCodes: mfaRecoveryCodes,
+      };
+    } catch (error) {
+      reply.code(500);
+
+      return {
+        error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+      };
+    }
+  });
 
   // // main user routes - links
   // fastify.get("/@me/links", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
@@ -208,8 +585,18 @@ export default async (fastify: FastifyInstance): Promise<void> => {
           salt,
           passwordHash,
 
+          mfaEnabled: false,
+
           createdAt: new Date(),
           updatedAt: new Date(),
+        });
+
+        // yeet old verification codes first (scenario: someone makes an acc, deletes in, makes a new one in an instant,
+        // now they have 2 verification codes!)
+        await verificationService.deleteMany({
+          email,
+
+          type: IVerificationType.VERIFICATION,
         });
 
         const verificationCode = await generateRandomToken(24);
@@ -219,6 +606,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
           userEmail: email,
 
           code: verificationCode,
+          type: IVerificationType.VERIFICATION,
           // TODO: set this to a constant and make it longer than 5 mins lmao
           validUntil: new Date(new Date().getTime() + (1000 * 60 * 5)),
 
@@ -246,11 +634,77 @@ export default async (fastify: FastifyInstance): Promise<void> => {
     }
 
     if (accountType === UserAccountType.OAUTH) {
-      reply.code(501);
+      const { oauthService, accessToken }: IRegisterRouteBody = request.body;
 
-      return {
-        error: "not implemented yet",
-      };
+      if (oauthService == null || accessToken == null) {
+        reply.code(400);
+
+        return {
+          error: "oauth service type or access token not specified",
+        };
+      }
+
+      // check this as exchangeToken expects an enum value, which cant be checked at compile
+      // time cos user input and such, passing an incorrect value wont break anything, it just
+      // wont throw a pretty looking error like the one below ^^
+      if (!Object.values(OauthServiceType).includes(oauthService)) {
+        reply.code(400);
+
+        return {
+          error: "invalid oauth service type specified",
+        };
+      }
+
+      try {
+        const tokenResponse = await exchangeToken(oauthService, {
+          code: accessToken,
+        });
+
+        const userResponse = await fetchUserData(oauthService, tokenResponse.accessToken);
+
+        const { uuid } = await userService.create({
+          accountType,
+
+          email: userResponse.email,
+          verified: true,
+
+          oauthService,
+          accessToken: tokenResponse.accessToken,
+          accessTokenType: tokenResponse.tokenType,
+          // expires in thats returned from oauth is in seconds (at least it should be)
+          accessTokenExpiresAt: new Date(new Date().getTime() + (tokenResponse.expiresIn * 1000)),
+          refreshToken: tokenResponse.refreshToken,
+          oauthScope: tokenResponse.scope,
+
+          mfaEnabled: false,
+
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        // oauth registrations complete at this point so log them in
+        const signedJwt = await jwtSign<IIdentityJwtContent>({
+          uuid,
+          email: userResponse.email,
+
+          accountType,
+        }, JWT_PRIVATE_KEY, {
+          // TODO: set this to a constant and make it longer than 15 mins lmao
+          expiresIn: 1000 * 60 * 15,
+        });
+
+        reply.code(200);
+
+        return {
+          token: signedJwt,
+        };
+      } catch (error) {
+        reply.code(500);
+
+        return {
+          error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+        };
+      }
     }
 
     reply.code(400);
@@ -280,6 +734,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
       const verification = (await verificationService.find({
         userEmail: email,
         code: verificationCode,
+        type: IVerificationType.VERIFICATION,
       }))[0];
 
       if (verification == null) {
@@ -298,11 +753,47 @@ export default async (fastify: FastifyInstance): Promise<void> => {
         };
       }
 
+      const user = await userService.findById(verification.uuid);
+
+      if (user == null) {
+        reply.code(400);
+
+        return {
+          error: "failed to find user",
+        };
+      }
+
+      if (user.verified) {
+        reply.code(400);
+
+        return {
+          error: "account already verified",
+        };
+      }
+
       await userService.update(verification.userUuid, {
         verified: true,
 
         updatedAt: new Date(),
       });
+
+      // now log them in while were at it
+      // we can grab the uuid from verification so we dont have do make an extra db call
+      const signedJwt = await jwtSign<IIdentityJwtContent>({
+        uuid: verification.uuid,
+        email,
+
+        accountType: UserAccountType.BANDSY,
+      }, JWT_PRIVATE_KEY, {
+        // TODO: set this to a constant and make it longer than 15 mins lmao
+        expiresIn: 1000 * 60 * 15,
+      });
+
+      reply.code(200);
+
+      return {
+        token: signedJwt,
+      };
     } catch (error) {
       reply.code(500);
 
@@ -310,13 +801,8 @@ export default async (fastify: FastifyInstance): Promise<void> => {
         error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
       };
     }
-
-    reply.code(204);
-
-    return null;
   });
 
-  // TODO (IMPORTANT): remove other verification codes when you request a new one
   fastify.post("/verify/resend", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
     const { email }: IVerifyResendRouteBody = request.body;
 
@@ -355,6 +841,13 @@ export default async (fastify: FastifyInstance): Promise<void> => {
         };
       }
 
+      // remove any old verification codes... just in case
+      await verificationService.deleteMany({
+        email,
+
+        type: IVerificationType.VERIFICATION,
+      });
+
       // NOTE: we just create a new verification code rather than resending the old one
       // this requires less effort and is less complex - less change of bugs!
 
@@ -366,6 +859,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
         userEmail: email,
 
         code: verificationCode,
+        type: IVerificationType.VERIFICATION,
         // TODO: set this to a constant and make it longer than 5 mins lmao
         validUntil: new Date(new Date().getTime() + (1000 * 60 * 5)),
 
@@ -397,7 +891,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
     const { accountType }: ILoginRouteBody = request.body;
 
     if (accountType === UserAccountType.BANDSY) {
-      const { email, password }: IRegisterRouteBody = request.body;
+      const { email, password, mfaCode }: ILoginRouteBody = request.body;
 
       if (email == null || password == null) {
         reply.code(400);
@@ -418,6 +912,14 @@ export default async (fastify: FastifyInstance): Promise<void> => {
           };
         }
 
+        if (!user.verified) {
+          reply.code(400);
+
+          return {
+            error: "cannot log into a non-verified account",
+          };
+        }
+
         // salt should be a string if account type is bandsy
         // the worst that can happen otherwise is the passwords not matching
         const { passwordHash } = await saltPassword(password, user.salt as string);
@@ -432,9 +934,28 @@ export default async (fastify: FastifyInstance): Promise<void> => {
           };
         }
 
+        if (user.mfaEnabled && user.mfaSecret == null) {
+          reply.code(400);
+
+          return {
+            error: "mfaSecret not set for some reason...",
+          };
+        }
+
+        // this cast is retarded (the need for it that is)... just read the last few lines
+        if (user.mfaEnabled && (mfaCode == null || !verifyTOTP(parseInt(mfaCode, 10), user.mfaSecret as string))) {
+          reply.code(400);
+
+          return {
+            error: "2fa validation failed",
+          };
+        }
+
         const signedJwt = await jwtSign<IIdentityJwtContent>({
           uuid: user.uuid,
           email: user.email,
+
+          accountType,
         }, JWT_PRIVATE_KEY, {
           // TODO: set this to a constant and make it longer than 15 mins lmao
           expiresIn: 1000 * 60 * 15,
@@ -455,11 +976,79 @@ export default async (fastify: FastifyInstance): Promise<void> => {
     }
 
     if (accountType === UserAccountType.OAUTH) {
-      reply.code(501);
+      const { oauthService, accessToken }: ILoginRouteBody = request.body;
 
-      return {
-        error: "not implemented yet",
-      };
+      if (oauthService == null || accessToken == null) {
+        reply.code(400);
+
+        return {
+          error: "oauth service type or access token not specified",
+        };
+      }
+
+      // check this as exchangeToken expects an enum value, which cant be checked at compile
+      // time cos user input and such, passing an incorrect value wont break anything, it just
+      // wont throw a pretty looking error like the one below ^^
+      if (!Object.values(OauthServiceType).includes(oauthService)) {
+        reply.code(400);
+
+        return {
+          error: "invalid oauth service type specified",
+        };
+      }
+
+      try {
+        const tokenResponse = await exchangeToken(oauthService, {
+          code: accessToken,
+        });
+
+        const userResponse = await fetchUserData(oauthService, tokenResponse.accessToken);
+
+        const user = await userService.findByEmail(userResponse.email);
+
+        if (user == null) {
+          reply.code(400);
+
+          return {
+            error: "user not found",
+          };
+        }
+
+        // update token shit
+        await userService.update(user.uuid, {
+          accessToken: tokenResponse.accessToken,
+          accessTokenType: tokenResponse.tokenType,
+          // expires in thats returned from oauth is in seconds (at least it should be)
+          accessTokenExpiresAt: new Date(new Date().getTime() + (tokenResponse.expiresIn * 1000)),
+          refreshToken: tokenResponse.refreshToken,
+          oauthScope: tokenResponse.scope,
+
+          updatedAt: new Date(),
+        });
+
+        // oauth registrations complete at this point so log them in
+        const signedJwt = await jwtSign<IIdentityJwtContent>({
+          uuid: user.uuid,
+          email: userResponse.email,
+
+          accountType,
+        }, JWT_PRIVATE_KEY, {
+          // TODO: set this to a constant and make it longer than 15 mins lmao
+          expiresIn: 1000 * 60 * 15,
+        });
+
+        reply.code(200);
+
+        return {
+          token: signedJwt,
+        };
+      } catch (error) {
+        reply.code(500);
+
+        return {
+          error: `error processing your request: ${process.env.NODE_ENV === "dev" ? error : "()"}`,
+        };
+      }
     }
 
     reply.code(400);
@@ -469,7 +1058,6 @@ export default async (fastify: FastifyInstance): Promise<void> => {
     };
   });
 
-  // TODO (IMPORTANT): remove other recovery codes when you request a new one
   fastify.post("/recover", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
     const { email }: IRecoverRouteBody = request.body;
 
@@ -492,6 +1080,15 @@ export default async (fastify: FastifyInstance): Promise<void> => {
         };
       }
 
+      // fixing a non-issue but whatevs
+      if (!user.verified) {
+        reply.code(400);
+
+        return {
+          error: "why tf are you trying to recover an acc which hasnt been verified yet...",
+        };
+      }
+
       if (user.accountType !== UserAccountType.BANDSY) {
         reply.code(400);
 
@@ -499,6 +1096,13 @@ export default async (fastify: FastifyInstance): Promise<void> => {
           error: "account recovery not supported for non 'bandsy' type accounts (3rd party)",
         };
       }
+
+      // remove any old recovery codes for this email, just in case
+      await verificationService.deleteMany({
+        email,
+
+        type: IVerificationType.RECOVERY,
+      });
 
       // NOTE: we can just reuse the verification code system here
 
@@ -510,6 +1114,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
         userEmail: email,
 
         code: recoveryCode,
+        type: IVerificationType.RECOVERY,
         // TODO: set this to a constant and make it longer than 5 mins lmao
         validUntil: new Date(new Date().getTime() + (1000 * 60 * 5)),
 
@@ -558,6 +1163,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
       const verification = (await verificationService.find({
         userEmail: email,
         code: recoveryCode,
+        type: IVerificationType.RECOVERY,
       }))[0];
 
       if (verification == null) {

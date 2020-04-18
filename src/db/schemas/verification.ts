@@ -1,7 +1,7 @@
 import { prop } from "@typegoose/typegoose";
 
 import Base from "./base";
-import { IVerification } from "../types";
+import { IVerification, IVerificationType } from "../types";
 
 class Verification extends Base implements IVerification {
   @prop({
@@ -19,6 +19,12 @@ class Verification extends Base implements IVerification {
     unique: true,
   })
   public code!: string;
+
+  @prop({
+    required: true,
+    enum: IVerificationType,
+  })
+  public type!: IVerificationType;
 
   @prop({
     required: true,

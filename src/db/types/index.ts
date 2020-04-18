@@ -1,6 +1,12 @@
 import { IDbUpdateInfo, IDbDeleteInfo } from "./db";
 import { OauthServiceType } from "./oauth";
-import { IVerification, IVerificationSearchInfo, IVerificationCreateInfo } from "./verification";
+import { IMfaRecoveryCode } from "./mfa";
+import {
+  IVerificationType,
+  IVerification,
+  IVerificationSearchInfo,
+  IVerificationCreateInfo,
+} from "./verification";
 import {
   UserAccountType,
   IUser,
@@ -29,7 +35,10 @@ export {
   IBaseCreateInfo,
   IBaseUpdateInfo,
 
+  IVerificationType,
   IVerification,
   IVerificationSearchInfo,
   IVerificationCreateInfo,
+
+  IMfaRecoveryCode,
 };

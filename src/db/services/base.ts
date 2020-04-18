@@ -7,7 +7,13 @@ import {
 } from "mongoose";
 
 import { Base } from "../schemas";
-import { IBaseSearchInfo, IBaseCreateInfo, IBaseUpdateInfo } from "../types";
+import {
+  IBaseSearchInfo,
+  IBaseCreateInfo,
+  IBaseUpdateInfo,
+  IDbDeleteInfo,
+} from "../types";
+import { parseBool } from "../../utils";
 
 interface IBaseService<T extends Base> {
   findById(uuid: string): Promise<DocumentDefinition<T> | null>;
@@ -69,6 +75,28 @@ abstract class BaseService<T extends BaseDoc> implements IBaseService<T> {
       return (await this.model.findByIdAndDelete(bsonUuid))?.toObject();
     } catch (error) {
       throw new Error(`error running BaseService.delete ( uuid: ${uuid} ): ${error}`);
+    }
+  }
+
+  public async deleteMany(searchInfo: IBaseSearchInfo<T>): Promise<IDbDeleteInfo> {
+    try {
+      // check above for reasoning regarding the typecase
+      const { ok, n, deletedCount } = await this.model.deleteMany(searchInfo as FilterQuery<T>);
+
+      // peace of mind null check, this shouldnt ever happen but in only 99% sure of that
+      if (ok == null || n == null || deletedCount == null) {
+        throw new Error("something was null at BaseService.deleteMany... this shouldnt happen!");
+      }
+
+      return {
+        // yes i know this will return true for anything other than 0, well...
+        // if mongo returns anything other than 0 or 1 here then we have bigger problems
+        success: Boolean(ok),
+        matchedCount: n,
+        deletedCount,
+      };
+    } catch (error) {
+      throw new Error(`error running BaseService.delete ( searchInfo: ${searchInfo} ): ${error}`);
     }
   }
 }

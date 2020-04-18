@@ -5,6 +5,7 @@ import {
   IBaseCreateInfo,
   IBaseUpdateInfo,
 } from "./base";
+import { IMfaRecoveryCode } from "./mfa";
 
 enum UserAccountType {
   BANDSY,
@@ -24,6 +25,15 @@ interface IUser extends IBase {
   // oauth account type
   oauthService?: OauthServiceType;
   accessToken?: string;
+  accessTokenType?: string;
+  accessTokenExpiresAt?: Date;
+  refreshToken?: string;
+  oauthScope?: string;
+
+  // 2fa stuff
+  mfaEnabled: boolean;
+  mfaSecret?: string;
+  mfaRecoveryCodes?: IMfaRecoveryCode[];
 }
 
 interface IUserSearchInfo extends IBaseSearchInfo<IUser> {
@@ -46,6 +56,10 @@ interface IUserCreateInfo extends IBaseCreateInfo<IUser> {
 
   oauthService?: OauthServiceType;
   accessToken?: string;
+  accessTokenType?: string;
+  accessTokenExpiresAt?: Date;
+  refreshToken?: string;
+  oauthScope?: string;
 }
 
 interface IUserUpdateInfo extends IBaseUpdateInfo<IUser> {
@@ -55,6 +69,10 @@ interface IUserUpdateInfo extends IBaseUpdateInfo<IUser> {
   passwordHash?: string;
 
   accessToken?: string;
+  accessTokenType?: string;
+  accessTokenExpiresAt?: Date;
+  refreshToken?: string;
+  oauthScope?: string;
 }
 
 export {

@@ -16,6 +16,7 @@ import {
   IUserSearchInfo,
   IUserCreateInfo,
   IUserUpdateInfo,
+  IVerificationType,
 } from "./types";
 
 const {
@@ -72,4 +73,5 @@ export {
   VerificationModel,
   User,
   VerificationService,
+  IVerificationType,
 };

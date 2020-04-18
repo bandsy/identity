@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { UserAccountType } from "../../db";
 
 const DEFAULT_ALGORITHM = "RS256";
 
@@ -9,6 +10,8 @@ interface IJwtOptions {
 interface IIdentityJwtContent {
   uuid: string;
   email: string;
+
+  accountType: UserAccountType;
 }
 
 const jwtSign = async <T extends object>(payload: T, privateKey: string, options: IJwtOptions): Promise<string> => new Promise((resolve, reject) => {

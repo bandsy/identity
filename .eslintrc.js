@@ -28,6 +28,8 @@ module.exports = {
     "@typescript-eslint/interface-name-prefix": "off",
     // doesnt work with typescript stuff
     "no-undef": "off",
+    "no-bitwise": "off",
+    "no-plusplus": "off",
   },
   settings: {
     "import/resolver": {

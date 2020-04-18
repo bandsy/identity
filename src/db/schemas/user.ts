@@ -2,6 +2,7 @@ import { prop } from "@typegoose/typegoose";
 
 import Base from "./base";
 import { IUser, UserAccountType, OauthServiceType } from "../types";
+import MfaRecoveryCode from "./mfa";
 
 class User extends Base implements IUser {
   @prop({
@@ -41,6 +42,42 @@ class User extends Base implements IUser {
     default: null,
   })
   public accessToken?: string;
+
+  @prop({
+    default: null,
+  })
+  public accessTokenType?: string;
+
+  @prop({
+    default: null,
+  })
+  public accessTokenExpiresAt?: Date;
+
+  @prop({
+    default: null,
+  })
+  public refreshToken?: string;
+
+  @prop({
+    default: null,
+  })
+  public oauthScope?: string;
+
+  @prop({
+    required: true,
+  })
+  public mfaEnabled!: boolean;
+
+  @prop({
+    default: null,
+  })
+  public mfaSecret?: string;
+
+  @prop({
+    _id: false,
+    default: null,
+  })
+  public mfaRecoveryCodes?: MfaRecoveryCode[];
 }
 
 export default User;

@@ -3,6 +3,7 @@ import "reflect-metadata";
 import { verifyEnvVars } from "./utils";
 import { connectDb } from "./db";
 import { startServer } from "./server";
+import { generateSecret, verifyTOTP } from "./server/helpers/2fa";
 
 // TODO: add a fn to verify these where needed
 const envVarsOk = verifyEnvVars([

@@ -10,6 +10,16 @@ import {
   RecoveryEmail,
   IRecoveryEmailOptions,
 } from "./email";
+import {
+  IOauthOptions,
+  IAccessTokenResponse,
+  IUserResponse,
+  ITokenEndpoints,
+  tokenEndpoints,
+  exchangeToken,
+  refreshToken,
+  fetchUserData,
+} from "./oauth";
 
 export {
   IIdentityJwtContent,
@@ -28,4 +38,13 @@ export {
   VerificationEmail,
   RecoveryEmail,
   IRecoveryEmailOptions,
+
+  IOauthOptions,
+  IAccessTokenResponse,
+  IUserResponse,
+  ITokenEndpoints,
+  tokenEndpoints,
+  exchangeToken,
+  refreshToken,
+  fetchUserData,
 };
