@@ -382,7 +382,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
     }
   });
 
-  fastify.get("/@me/2fa/codes", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+  fastify.post("/@me/2fa/codes", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
     // need: 2fa enabled, bandsy acc type, 2fa code
     const { token } = request.cookies;
 
@@ -554,6 +554,14 @@ export default async (fastify: FastifyInstance): Promise<void> => {
 
   // });
 
+  // TODO: better error message for dupe email during account creation
+  // TODO: remove verification/recovery codes after verification/recovery process
+  // TODO: error codes
+
+  // TODO: oauth verify route
+  // TODO: mfa recovery code gen fix
+  // TODO: mfa recovery code checking on login
+
   // main visitor routes
   fastify.post("/register", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
     // bandsy and oauth acc type route
@@ -594,7 +602,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
         // yeet old verification codes first (scenario: someone makes an acc, deletes in, makes a new one in an instant,
         // now they have 2 verification codes!)
         await verificationService.deleteMany({
-          email,
+          userEmail: email,
 
           type: IVerificationType.VERIFICATION,
         });
@@ -753,7 +761,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
         };
       }
 
-      const user = await userService.findById(verification.uuid);
+      const user = await userService.findById(verification.userUuid);
 
       if (user == null) {
         reply.code(400);
@@ -780,7 +788,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
       // now log them in while were at it
       // we can grab the uuid from verification so we dont have do make an extra db call
       const signedJwt = await jwtSign<IIdentityJwtContent>({
-        uuid: verification.uuid,
+        uuid: verification.userUuid,
         email,
 
         accountType: UserAccountType.BANDSY,
@@ -843,7 +851,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
 
       // remove any old verification codes... just in case
       await verificationService.deleteMany({
-        email,
+        userEmail: email,
 
         type: IVerificationType.VERIFICATION,
       });
@@ -1099,7 +1107,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
 
       // remove any old recovery codes for this email, just in case
       await verificationService.deleteMany({
-        email,
+        userEmail: email,
 
         type: IVerificationType.RECOVERY,
       });

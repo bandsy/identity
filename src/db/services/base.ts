@@ -13,7 +13,6 @@ import {
   IBaseUpdateInfo,
   IDbDeleteInfo,
 } from "../types";
-import { parseBool } from "../../utils";
 
 interface IBaseService<T extends Base> {
   findById(uuid: string): Promise<DocumentDefinition<T> | null>;
