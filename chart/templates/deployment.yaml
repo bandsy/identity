@@ -41,6 +41,21 @@ spec:
             secretKeyRef:
               key: TRANS_EMAIL_PASS
               name: {{ .Release.Name }}
+        - name: MONGO_CERT
+          valueFrom:
+            secretKeyRef:
+              key: MONGO_CERT
+              name: {{ .Release.Name }}
+        - name: JWT_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              key: JWT_PRIVATE_KEY
+              name: {{ .Release.Name }}
+        - name: JWT_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              key: JWT_PUBLIC_KEY
+              name: {{ .Release.Name }}
 
         - name: WEBSERVER_LOGGER
           valueFrom:
@@ -88,4 +103,15 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: EMAIL_DISPLAY_NAME
+              name: {{ .Release.Name }}
+
+        - name: MONGO_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: MONGO_HOST
+              name: {{ .Release.Name }}
+        - name: MONGO_DB
+          valueFrom:
+            configMapKeyRef:
+              key: MONGO_DB
               name: {{ .Release.Name }}
