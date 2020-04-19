@@ -29,16 +29,10 @@ const {
 
 // TODO: see if theres a way to pass the cert to mongoose directly
 const connectDb = async (): Promise<void> => {
-  let envOpts = {};
-
   try {
     fs.writeFileSync(path.join(NODE_PATH, "x509-full.pem"), MONGO_CERT);
-  } catch (error) {
-    console.error(`error starting mongo (1): ${error}`);
-    process.exit(-1);
-  }
 
-  try {
+    let envOpts = {};
     if (NODE_ENV === "dev") {
       envOpts = {
         tlsAllowInvalidCertificates: true,
@@ -49,15 +43,9 @@ const connectDb = async (): Promise<void> => {
         tlsCAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
       };
     }
-  } catch (error) {
-    console.error(`error starting mongo (2): ${error}`);
-    process.exit(-1);
-  }
 
-  try {
     await mongoose.connect(`mongodb://${MONGO_HOST}/`, {
       useNewUrlParser: true,
-      useUnifiedTopology: true,
       dbName: MONGO_DB,
       tls: true,
       tlsCertificateKeyFile: path.join(NODE_PATH, "x509-full.pem"),
@@ -66,12 +54,12 @@ const connectDb = async (): Promise<void> => {
 
       ...envOpts,
     });
+
+    console.log("connected to mongo");
   } catch (error) {
-    console.error(`error starting mongo (3): ${error}`);
+    console.error(`error starting mongo: ${error}`);
     process.exit(-1);
   }
-
-  console.log("connected to mongo");
 };
 
 export {
