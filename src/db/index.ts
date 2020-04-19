@@ -1,5 +1,5 @@
 import path from "path";
-import fs from "fs";
+// import fs from "fs";
 
 import mongoose from "mongoose";
 
@@ -24,13 +24,13 @@ const {
   NODE_PATH,
   MONGO_HOST,
   MONGO_DB,
-  MONGO_CERT,
+  // MONGO_CERT,
 } = process.env;
 
 // TODO: see if theres a way to pass the cert to mongoose directly
 const connectDb = async (): Promise<void> => {
   try {
-    fs.writeFileSync(path.join(NODE_PATH, "x509-full.pem"), MONGO_CERT);
+    // fs.writeFileSync(path.join(NODE_PATH, "x509-full.pem"), MONGO_CERT);
 
     let envOpts = {};
     if (NODE_ENV === "dev") {
@@ -49,20 +49,20 @@ const connectDb = async (): Promise<void> => {
       useUnifiedTopology: true,
       dbName: MONGO_DB,
       tls: true,
-      tlsCertificateKeyFile: path.join(NODE_PATH, "x509-full.pem"),
+      // tlsCertificateKeyFile: path.join(NODE_PATH, "x509-full.pem"),
       authMechanism: "MONGODB-X509",
       authSource: "$external",
 
       ...envOpts,
     });
 
-    mongoose.connection.on("error", error => {
-      throw error;
-    });
+    // mongoose.connection.on("error", error => {
+    //   throw error;
+    // });
 
     console.log("connected to mongo");
   } catch (error) {
-    console.error(error);
+    console.error(`error starting mongo: ${error}`);
     process.exit(-1);
   }
 };
