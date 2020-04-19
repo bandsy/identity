@@ -20,6 +20,7 @@ import {
 } from "./types";
 
 const {
+  NODE_ENV,
   NODE_PATH,
   MONGO_HOST,
   MONGO_DB,
@@ -31,21 +32,35 @@ const connectDb = async (): Promise<void> => {
   try {
     fs.writeFileSync(path.join(NODE_PATH, "x509-full.pem"), MONGO_CERT);
 
+    let envOpts = {};
+    if (NODE_ENV === "dev") {
+      envOpts = {
+        tlsAllowInvalidCertificates: true,
+      };
+    }
+    if (NODE_ENV === "prod") {
+      envOpts = {
+        tlsCAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+      };
+    }
+
     await mongoose.connect(`mongodb://${MONGO_HOST}/`, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       dbName: MONGO_DB,
       tls: true,
-      // tlsCAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
       tlsCertificateKeyFile: path.join(NODE_PATH, "x509-full.pem"),
       authMechanism: "MONGODB-X509",
       authSource: "$external",
-      tlsAllowInvalidCertificates: true,
+
+      ...envOpts,
     });
 
     mongoose.connection.on("error", error => {
       throw error;
     });
+
+    console.log("connected to mongo");
   } catch (error) {
     console.error(error);
     process.exit(-1);

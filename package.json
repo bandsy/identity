@@ -21,7 +21,7 @@
     "run:hot": "yarn cross-env NODE_ENV=dev NODE_PATH=. yarn nodemon -r dotenv/config -r source-map-support/register dist --watch dist --watch .env",
     "kube:dev": "telepresence --swap-deployment identity --namespace develop --expose 3000 --method inject-tcp --run yarn cross-env NODE_ENV=dev NODE_PATH=. node -r dotenv/config -r source-map-support/register dist",
     "kube:hot": "telepresence --swap-deployment identity --namespace develop --expose 3000 --method inject-tcp --run yarn cross-env NODE_ENV=dev NODE_PATH=. yarn nodemon -r dotenv/config -r source-map-support/register dist --watch dist --watch .env",
-    "run:prod": "yarn cross-env NODE_ENV=prod NODE_PATH=. node -r dotenv/config dist",
+    "run:prod": "yarn cross-env NODE_ENV=prod NODE_PATH=. node dist",
     "clean": "rm -rf dist coverage"
   },
   "devDependencies": {
@@ -37,7 +37,6 @@
     "@types/uuid": "^7.0.2",
     "@typescript-eslint/eslint-plugin": "^2.22.0",
     "@typescript-eslint/parser": "^2.22.0",
-    "cross-env": "^7.0.0",
     "dotenv": "^8.2.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
@@ -52,6 +51,7 @@
   "dependencies": {
     "@typegoose/typegoose": "^6.4.0",
     "bson": "^4.0.4",
+    "cross-env": "^7.0.2",
     "ejs": "^3.0.2",
     "fastify": "^2.12.1",
     "fastify-cookie": "^3.6.0",
