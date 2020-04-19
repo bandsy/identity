@@ -21,7 +21,7 @@ const generateHOTP = (secret: string, counter: number): number => {
   const buffer = Buffer.alloc(8);
 
   let bufCounter = counter;
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 8; i += 1) {
     buffer[7 - i] = bufCounter & 0xff;
     bufCounter >>= 8;
   }
@@ -46,7 +46,7 @@ const verifyTOTP = (token: number, secret: string, window = 1): boolean => {
     throw new Error("totp window too large");
   }
 
-  for (let errorWindow = -window; errorWindow <= +window; errorWindow++) {
+  for (let errorWindow = -window; errorWindow <= +window; errorWindow += 1) {
     const totp = generateTOTP(secret, errorWindow);
 
     if (token === totp) {

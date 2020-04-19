@@ -88,6 +88,7 @@ abstract class BaseService<T extends BaseDoc> implements IBaseService<T> {
       }
 
       return {
+        // TODO: make sure the Boolean() thing actually works the way i expect it to
         // yes i know this will return true for anything other than 0, well...
         // if mongo returns anything other than 0 or 1 here then we have bigger problems
         success: Boolean(ok),
@@ -101,7 +102,6 @@ abstract class BaseService<T extends BaseDoc> implements IBaseService<T> {
 }
 
 export {
-  // eslint-disable-next-line import/prefer-default-export
   BaseService,
   IBaseService,
 };

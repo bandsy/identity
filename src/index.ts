@@ -78,6 +78,8 @@ if (!envVarsOk) {
   process.exit(-1);
 }
 
+// TODO: always use NODE_PATH instead of __dirname
+
 // TODO: propagate any errors from connectDb and startServer instead
 // TODO: better/separate way to handle env vars
 (async (): Promise<void> => {

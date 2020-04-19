@@ -1,4 +1,3 @@
-/* eslint-disable max-classes-per-file */
 import { prop, modelOptions } from "@typegoose/typegoose";
 import muuid from "uuid-mongodb";
 import { Binary } from "bson";

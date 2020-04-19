@@ -25,6 +25,7 @@ spec:
       containers:
       - name: {{ .Release.Name }}
         image: docker.pkg.github.com/bandsy/{{ .Release.Name }}/{{ .Release.Name }}:develop
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
         readinessProbe:

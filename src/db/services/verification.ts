@@ -2,10 +2,7 @@ import { Document } from "mongoose";
 
 import { BaseService } from "./base";
 import { Verification } from "../schemas";
-// import { IVerification } from "../types";
 import { VerificationModel } from "../models";
-
-// interface IVerificationService extends IBaseService<Verification> {}
 
 // workaround cos community made types are fine, until you try to get 2 libs working together...
 type VerificationDoc = Verification & Document;
@@ -22,7 +19,6 @@ class VerificationService extends BaseService<VerificationDoc> {
 }
 
 export {
-  // IVerificationService,
   // eslint-disable-next-line import/prefer-default-export
   VerificationService,
 };

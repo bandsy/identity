@@ -32,7 +32,7 @@ abstract class Email<T extends IBaseEmailOptions> {
     this.displayName = DEFAULT_DISPLAY_NAMME;
     this.display = DEFAULT_DISPLAY;
 
-    this.template = fs.readFileSync(path.join(__dirname, "..", "..", "..", "..", "..", "templates", templateName)).toString();
+    this.template = fs.readFileSync(path.join(process.env.NODE_PATH, "templates", templateName)).toString();
   }
 
   // TODO: better send info
