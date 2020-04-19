@@ -83,6 +83,10 @@ if (!envVarsOk) {
 // TODO: propagate any errors from connectDb and startServer instead
 // TODO: better/separate way to handle env vars
 (async (): Promise<void> => {
-  await connectDb();
-  await startServer();
+  try {
+    await connectDb();
+    await startServer();
+  } catch (error) {
+    console.error(`startup error: ${error}`);
+  }
 })();

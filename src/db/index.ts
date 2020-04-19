@@ -46,6 +46,7 @@ const connectDb = async (): Promise<void> => {
 
     await mongoose.connect(`mongodb://${MONGO_HOST}/`, {
       useNewUrlParser: true,
+      useUnifiedTopology: true,
       dbName: MONGO_DB,
       tls: true,
       tlsCertificateKeyFile: path.join(NODE_PATH, "x509-full.pem"),

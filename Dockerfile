@@ -1,4 +1,4 @@
-FROM node
+FROM node:12
 
 RUN useradd -ms /bin/bash admin
 
