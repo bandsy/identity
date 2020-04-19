@@ -25,6 +25,10 @@ module.exports = {
     "no-console": "off",
     "arrow-parens": "off",
     "max-len": ["error", 150],
+    "@typescript-eslint/interface-name-prefix": "off",
+    // doesnt work with typescript stuff
+    "no-undef": "off",
+    "no-bitwise": "off",
   },
   settings: {
     "import/resolver": {

@@ -1,7 +1,17 @@
+import "reflect-metadata";
+
 import { verifyEnvVars } from "./utils";
+import { connectDb } from "./db";
 import { startServer } from "./server";
 
+// TODO: add a fn to verify these where needed
 const envVarsOk = verifyEnvVars([
+  {
+    envVar: "NODE_ENV",
+  },
+  {
+    envVar: "NODE_PATH",
+  },
   {
     envVar: "WEBSERVER_LOGGER",
     requirements: {
@@ -46,6 +56,21 @@ const envVarsOk = verifyEnvVars([
   {
     envVar: "EMAIL_DISPLAY_NAME",
   },
+  {
+    envVar: "MONGO_HOST",
+  },
+  {
+    envVar: "MONGO_DB",
+  },
+  {
+    envVar: "MONGO_CERT",
+  },
+  {
+    envVar: "JWT_PRIVATE_KEY",
+  },
+  {
+    envVar: "JWT_PUBLIC_KEY",
+  },
 ]);
 
 if (!envVarsOk) {
@@ -53,4 +78,11 @@ if (!envVarsOk) {
   process.exit(-1);
 }
 
-startServer();
+// TODO: always use NODE_PATH instead of __dirname
+
+// TODO: propagate any errors from connectDb and startServer instead
+// TODO: better/separate way to handle env vars
+(async (): Promise<void> => {
+  await connectDb();
+  await startServer();
+})();

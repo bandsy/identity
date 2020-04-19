@@ -1,4 +1,5 @@
 import Fastify, { FastifyInstance } from "fastify";
+import fastifyCookie from "fastify-cookie";
 
 import routes from "./routes";
 
@@ -14,6 +15,11 @@ const buildFastify = (settings = {}): FastifyInstance => {
     apiPrefix: "/api",
     nonce: "cunty mcjim",
   }));
+
+  // TODO make secret an env var
+  fastify.register(fastifyCookie, {
+    secret: "rawrxd",
+  });
 
   fastify.register(routes, { prefix: "/api" });
 
