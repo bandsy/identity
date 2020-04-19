@@ -1,4 +1,4 @@
-import path from "path";
+// import path from "path";
 // import fs from "fs";
 
 import mongoose from "mongoose";
@@ -21,7 +21,7 @@ import {
 
 const {
   NODE_ENV,
-  NODE_PATH,
+  // NODE_PATH,
   MONGO_HOST,
   MONGO_DB,
   // MONGO_CERT,
