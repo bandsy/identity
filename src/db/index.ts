@@ -44,6 +44,8 @@ const connectDb = async (): Promise<void> => {
       };
     }
 
+    console.log(fs.readFileSync(path.join(NODE_PATH, "x509-full.pem")).toString());
+
     await mongoose.connect(`mongodb://${MONGO_HOST}/`, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
