@@ -44,9 +44,7 @@ const connectDb = async (): Promise<void> => {
       };
     }
 
-    console.log(fs.readFileSync(path.join(NODE_PATH, "x509-full.pem")).toString());
-
-    await mongoose.connect(`mongodb://${MONGO_HOST}/`, {
+    setTimeout(() => mongoose.connect(`mongodb://${MONGO_HOST}/`, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       dbName: MONGO_DB,
@@ -56,7 +54,7 @@ const connectDb = async (): Promise<void> => {
       authSource: "$external",
 
       ...envOpts,
-    });
+    }), 1);
 
     console.log("connected to mongo");
   } catch (error) {

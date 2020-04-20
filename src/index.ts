@@ -84,7 +84,7 @@ if (!envVarsOk) {
 // TODO: better/separate way to handle env vars
 (async (): Promise<void> => {
   try {
-    await connectDb();
+    setTimeout(() => connectDb(), 1);
     await startServer();
   } catch (error) {
     console.error(`startup error: ${error}`);
