@@ -13,6 +13,7 @@ import {
   IBaseUpdateInfo,
   IDbDeleteInfo,
 } from "../types";
+import { createDatabaseError } from "../helpers";
 
 interface IBaseService<T extends Base> {
   findById(uuid: string): Promise<DocumentDefinition<T> | null>;
@@ -53,7 +54,7 @@ abstract class BaseService<T extends BaseDoc> implements IBaseService<T> {
     try {
       return (await this.model.create(createInfo)).toObject();
     } catch (error) {
-      throw new Error(`error running BaseService.create ( createInfo: ${createInfo} ): ${error}`);
+      throw createDatabaseError(error.code, `error running BaseService.create ( createInfo: ${createInfo} ): ${error.errmsg}`);
     }
   }
 

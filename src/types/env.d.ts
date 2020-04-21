@@ -22,5 +22,7 @@ declare namespace NodeJS {
 
     JWT_PRIVATE_KEY: string;
     JWT_PUBLIC_KEY: string;
+
+    ACCOUNT_VERIFICATION_TIME: string;
   }
 }

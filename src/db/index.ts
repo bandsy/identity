@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { UserModel, VerificationModel } from "./models";
 import { Base, User, Verification } from "./schemas";
 import { UserService, IUserService, VerificationService } from "./services";
+import { createDatabaseError } from "./helpers";
 import {
   IDbUpdateInfo,
   IDbDeleteInfo,
@@ -17,6 +18,9 @@ import {
   IUserCreateInfo,
   IUserUpdateInfo,
   IVerificationType,
+
+  DatabaseError,
+  IDatabaseError,
 } from "./types";
 
 const {
@@ -87,4 +91,9 @@ export {
   User,
   VerificationService,
   IVerificationType,
+
+  DatabaseError,
+  IDatabaseError,
+
+  createDatabaseError,
 };

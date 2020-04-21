@@ -1,6 +1,7 @@
 import { IIdentityJwtContent, jwtSign, jwtVerify } from "./jwt";
 import { saltPassword, generateSaltedPassword } from "./pwd";
 import { generateRandomToken } from "./token";
+import { createBandsyError } from "./errors";
 import {
   IBaseEmailOptions,
   Email,
@@ -47,4 +48,6 @@ export {
   exchangeToken,
   refreshToken,
   fetchUserData,
+
+  createBandsyError,
 };

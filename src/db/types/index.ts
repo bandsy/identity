@@ -1,6 +1,7 @@
 import { IDbUpdateInfo, IDbDeleteInfo } from "./db";
 import { OauthServiceType } from "./oauth";
 import { IMfaRecoveryCode } from "./mfa";
+import { DatabaseError, IDatabaseError } from "./errors";
 import {
   IVerificationType,
   IVerification,
@@ -41,4 +42,7 @@ export {
   IVerificationCreateInfo,
 
   IMfaRecoveryCode,
+
+  DatabaseError,
+  IDatabaseError,
 };
