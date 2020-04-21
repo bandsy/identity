@@ -32,7 +32,7 @@ const {
   ACCOUNT_VERIFICATION_TIME,
 } = process.env;
 
-const schema = {
+const baseSchema = {
   body: {
     type: "object",
     required: ["email", "password"],
@@ -41,6 +41,18 @@ const schema = {
         type: "string",
       },
       password: {
+        type: "string",
+      },
+    },
+  },
+};
+
+const resendSchema = {
+  body: {
+    type: "object",
+    required: ["email"],
+    properties: {
+      email: {
         type: "string",
       },
     },
@@ -61,8 +73,30 @@ const transportOptions: IEmailTransportOptions = {
 const userService = new UserService();
 const verificationService = new VerificationService();
 
+const verifyEmail = async (userUuid: string, userEmail: string): Promise<void> => {
+  const verificationCode = await generateRandomToken(24);
+
+  await verificationService.create({
+    userUuid,
+    userEmail,
+
+    code: verificationCode,
+    type: IVerificationType.VERIFICATION,
+    validUntil: new Date(new Date().getTime() + parseInt(ACCOUNT_VERIFICATION_TIME.trim(), 10)),
+
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  const verificationEmail = new VerificationEmail(transportOptions);
+  await verificationEmail.send(userEmail, {
+    username: "cunty mcjim",
+    verificationCode,
+  });
+};
+
 export default async (fastify: FastifyInstance): Promise<void> => {
-  fastify.post("/", { schema }, async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+  fastify.post("/", { schema: baseSchema }, async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
     const { email, password } = request.body;
 
     try {
@@ -97,26 +131,42 @@ export default async (fastify: FastifyInstance): Promise<void> => {
         }
       });
 
-      // send verification email
-      const verificationCode = await generateRandomToken(24);
+      // generate verification code and send email
+      await verifyEmail(uuid, email);
 
-      await verificationService.create({
-        userUuid: uuid,
-        userEmail: email,
+      reply.code(HttpResponseCodes.OK_NO_CONTENT);
 
-        code: verificationCode,
-        type: IVerificationType.VERIFICATION,
-        validUntil: new Date(new Date().getTime() + parseInt(ACCOUNT_VERIFICATION_TIME.trim(), 10)),
+      return null;
+    } catch (error) {
+      throw createBandsyError(
+        error.statusCode ?? HttpResponseCodes.SERVER_ERROR,
+        error.bandsyCode ?? BandsyResponseCodes.SERVER_ERROR,
+        error.message ?? error.toString() ?? error,
+      );
+    }
+  });
 
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+  fastify.post("/resend", { schema: resendSchema }, async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    const { email } = request.body;
 
-      const verificationEmail = new VerificationEmail(transportOptions);
-      await verificationEmail.send(email, {
-        username: "cunty mcjim",
-        verificationCode,
-      });
+    try {
+      // only for bansy type (email + pass) accounts
+      const { uuid } = (await userService.find({
+        email,
+        verified: false,
+        accountType: UserAccountType.BANDSY,
+      }))[0];
+
+      if (uuid == null) {
+        throw createBandsyError(
+          HttpResponseCodes.CLIENT_ERROR,
+          BandsyResponseCodes.INVALID_ACCOUNT,
+          "an unverified bandsy (email + pass) account with this email does not exist",
+        );
+      }
+
+      // generate verification code and send email
+      await verifyEmail(uuid, email);
 
       reply.code(HttpResponseCodes.OK_NO_CONTENT);
 

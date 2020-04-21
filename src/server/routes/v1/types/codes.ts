@@ -5,6 +5,7 @@ enum BandsyResponseCodes {
   CLIENT_ERROR,
   SERVER_ERROR,
   DUPLICATE_EMAIL,
+  INVALID_ACCOUNT,
 }
 
 export {
