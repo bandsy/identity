@@ -30,7 +30,9 @@ const {
 // TODO: see if theres a way to pass the cert to mongoose directly
 const connectDb = async (): Promise<void> => {
   try {
-    fs.writeFileSync(path.join(NODE_PATH, "x509-full.pem"), MONGO_CERT);
+    const certPath = path.join(NODE_PATH, "mongo-cert.pem");
+
+    fs.writeFileSync(certPath, MONGO_CERT);
 
     let envOpts = {};
     if (NODE_ENV === "dev") {
@@ -44,12 +46,12 @@ const connectDb = async (): Promise<void> => {
       };
     }
 
-    await mongoose.connect(`mongodb://${MONGO_HOST}/?poolSize=1`, {
+    await mongoose.connect(`mongodb://${MONGO_HOST}/`, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       dbName: MONGO_DB,
       tls: true,
-      tlsCertificateKeyFile: path.join(NODE_PATH, "x509-full.pem"),
+      tlsCertificateKeyFile: certPath,
       authMechanism: "MONGODB-X509",
       authSource: "$external",
 
@@ -59,7 +61,7 @@ const connectDb = async (): Promise<void> => {
     console.log("connected to mongo");
   } catch (error) {
     console.error(`error starting mongo: ${error}`);
-    process.exit(-1);
+    throw new Error(`error starting mongo: ${error}`);
   }
 };
 

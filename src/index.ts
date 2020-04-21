@@ -1,8 +1,8 @@
 import "reflect-metadata";
 
 import { verifyEnvVars } from "./utils";
-import { connectDb } from "./db";
 import { startServer } from "./server";
+import { connectDb } from "./db";
 
 // TODO: add a fn to verify these where needed
 const envVarsOk = verifyEnvVars([
@@ -82,11 +82,13 @@ if (!envVarsOk) {
 
 // TODO: propagate any errors from connectDb and startServer instead
 // TODO: better/separate way to handle env vars
+
 (async (): Promise<void> => {
   try {
     await connectDb();
     await startServer();
   } catch (error) {
     console.error(`startup error: ${error}`);
+    process.exit(-1);
   }
 })();
