@@ -24,5 +24,6 @@ declare namespace NodeJS {
     JWT_PUBLIC_KEY: string;
 
     ACCOUNT_VERIFICATION_TIME: string;
+    TOKEN_VALIDITY_TIME: string;
   }
 }

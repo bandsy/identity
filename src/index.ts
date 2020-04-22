@@ -77,6 +77,12 @@ const envVarsOk = verifyEnvVars([
       type: "number",
     },
   },
+  {
+    envVar: "TOKEN_VALIDITY_TIME",
+    requirements: {
+      type: "number",
+    },
+  },
 ]);
 
 if (!envVarsOk) {

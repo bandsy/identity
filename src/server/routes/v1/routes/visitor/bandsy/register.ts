@@ -2,35 +2,18 @@ import { ServerResponse } from "http";
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
-import { parseBool } from "../../../../../../utils";
 import {
   generateSaltedPassword,
-  generateRandomToken,
-  VerificationEmail,
-  IEmailTransportOptions,
   createBandsyError,
 } from "../../../../../helpers";
 import {
   UserService,
   UserAccountType,
-  VerificationService,
   IVerificationType,
   DatabaseError,
 } from "../../../../../../db";
 import { HttpResponseCodes, BandsyResponseCodes } from "../../../types";
-
-// TODO: use enums for http response codes
-
-// TODO: yes i realise this can be done in a better way (runtime type checker!)
-const {
-  TRANS_HOST,
-  TRANS_PORT,
-  TRANS_SECURE,
-  TRANS_EMAIL,
-  TRANS_EMAIL_PASS,
-
-  ACCOUNT_VERIFICATION_TIME,
-} = process.env;
+import { verifyEmail } from "../../../../../helpers/email";
 
 const baseSchema = {
   body: {
@@ -59,41 +42,7 @@ const resendSchema = {
   },
 };
 
-// TODO: the boolean cast wont be needed when i write that runtime type checker
-const transportOptions: IEmailTransportOptions = {
-  host: TRANS_HOST.trim(),
-  port: parseInt(TRANS_PORT.trim(), 10),
-  secure: parseBool(TRANS_SECURE.trim()) as boolean,
-  auth: {
-    user: TRANS_EMAIL.trim(),
-    pass: TRANS_EMAIL_PASS.trim(),
-  },
-};
-
 const userService = new UserService();
-const verificationService = new VerificationService();
-
-const verifyEmail = async (userUuid: string, userEmail: string): Promise<void> => {
-  const verificationCode = await generateRandomToken(24);
-
-  await verificationService.create({
-    userUuid,
-    userEmail,
-
-    code: verificationCode,
-    type: IVerificationType.VERIFICATION,
-    validUntil: new Date(new Date().getTime() + parseInt(ACCOUNT_VERIFICATION_TIME.trim(), 10)),
-
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
-
-  const verificationEmail = new VerificationEmail(transportOptions);
-  await verificationEmail.send(userEmail, {
-    username: "cunty mcjim",
-    verificationCode,
-  });
-};
 
 export default async (fastify: FastifyInstance): Promise<void> => {
   fastify.post("/", { schema: baseSchema }, async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
@@ -132,7 +81,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
       });
 
       // generate verification code and send email
-      await verifyEmail(uuid, email);
+      await verifyEmail(uuid, email, IVerificationType.VERIFICATION);
 
       reply.code(HttpResponseCodes.OK_NO_CONTENT);
 
@@ -166,7 +115,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
       }
 
       // generate verification code and send email
-      await verifyEmail(uuid, email);
+      await verifyEmail(uuid, email, IVerificationType.VERIFICATION);
 
       reply.code(HttpResponseCodes.OK_NO_CONTENT);
 
