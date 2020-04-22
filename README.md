@@ -156,7 +156,7 @@ This section details version 1 of the identity api and any other info that devel
   - message: string
   - error: string
 
-> NOTE: The 'error' field is only present when running in development mods
+> NOTE: The error field is only present when running in development mode
 
 > NOTE: The client should handle all possible bandsy error codes, besides errors listed in each route, ERROR_HANDLER_ERROR and UNKNOWN_ERROR errors can also occur (but shouldnt)
 

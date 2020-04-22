@@ -4,16 +4,25 @@ import { admin, user, visitor } from "./routes";
 import { HttpResponseCodes, BandsyResponseCodes, IBandsyError } from "./types";
 
 // temp
+// TODO: remove
 import old from "./index-old";
 
 const { NODE_ENV } = process.env;
 
+// TODO: ratelimiting
+// TODO: blacklists
+// DONE: basic authorisation (token, admin)
+// TODO: mfa routes
+// TODO: figure out how to do user account links
+// TODO: figure out how to do user payment links
+// TODO: update docs and make them look nicer
 export default async (fastify: FastifyInstance): Promise<void> => {
   fastify.register(admin, { prefix: "admin" });
   fastify.register(user, { prefix: "user" });
   fastify.register(visitor, { prefix: "visitor" });
 
   // temp
+  // TODO: remove
   fastify.register(old);
 
   fastify.setErrorHandler(async (error: IBandsyError, request, reply) => {
