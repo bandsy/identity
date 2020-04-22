@@ -107,7 +107,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
 
       return {
         token: signedJwt,
-        validMs: Number.parseInt(TOKEN_VALIDITY_TIME, 10),
+        validUntil: new Date(new Date().getTime() + Number.parseInt(TOKEN_VALIDITY_TIME, 10)).toISOString(),
       };
     } catch (error) {
       throw createBandsyError(

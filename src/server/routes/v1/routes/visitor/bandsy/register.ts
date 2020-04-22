@@ -44,6 +44,7 @@ const resendSchema = {
 
 const userService = new UserService();
 
+// TODO: validate password (minimum standards) and email (a@b.c)
 export default async (fastify: FastifyInstance): Promise<void> => {
   fastify.post("/", { schema: baseSchema }, async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
     const { email, password } = request.body;
