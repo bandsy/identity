@@ -15,7 +15,7 @@ export default async (fastify: FastifyInstance): Promise<void> => {
 
   fastify.register(fp(ratelimit), {
     type: RatelimitType.IP,
-    intervalMs: 5000,
-    allowedCalls: 2,
+    intervalMs: 1000000,
+    allowedCalls: 5,
   });
 };

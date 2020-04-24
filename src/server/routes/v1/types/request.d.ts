@@ -14,5 +14,6 @@ declare module "fastify" {
   > {
     jwt?: IIdentityJwtContent;
     claims?: IClaims;
+    ratelimits?: boolean;
   }
 }

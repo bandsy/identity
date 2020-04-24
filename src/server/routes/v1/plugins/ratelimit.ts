@@ -1,67 +1,101 @@
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { ServerResponse } from "http";
 
-import { IRatelimitOptions, IRatelimitStore, RatelimitType } from "../types";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import Redis from "ioredis";
+import NodeCache from "node-cache";
+
+import { IRatelimitOptions, HttpResponseCodes, BandsyResponseCodes } from "../types";
+import { createBandsyError } from "../../../helpers";
+
+const MAX_ALLOWED_REQUESTS = 5;
+
+// TODO: make these env vars
+const redis = new Redis({
+  name: "mymaster",
+  sentinels: [
+    {
+      host: "rfs-redisfailover.redis.svc.cluster.local",
+      port: 26379,
+    },
+  ],
+});
+
+const cache = new NodeCache();
 
 // TODO: set ratelimit headers
 export default async (fastify: FastifyInstance, options: IRatelimitOptions): Promise<void> => {
-  // TODO: use redis for this *yeoooo redis*
-  let ratelimits: IRatelimitStore[] = [];
+  // let ratelimits: { ip: string; end: Date }[] = [];
 
-  let interval = Math.floor(Date.now() / options.intervalMs);
+  await redis.select(0);
+  await redis.flushdb();
 
-  fastify.addHook("onRequest", async (request: FastifyRequest) => {
-    // just in case lmao
-    if (options.allowedCalls === 0) {
-      // throw
-      throw new Error("wip error");
+  fastify.decorateRequest("ratelimits", false);
+
+  fastify.addHook("onRequest", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+    // prevents multiple ratelimits to be registered on the same group of routes
+    if (request.ratelimits === true) {
+      throw createBandsyError(
+        HttpResponseCodes.SERVER_ERROR,
+        BandsyResponseCodes.SERVER_ERROR,
+        "multiple ratelimit runs on a single route are not allowed",
+      );
     }
 
-    // reset everything if interval
-    const newInterval = Math.floor(Date.now() / options.intervalMs);
+    request.ratelimits = true;
 
-    if (interval < newInterval) {
-      interval = newInterval;
-
-      ratelimits = [];
+    // refuse ratelimited hosts
+    const cachedRatelimit = cache.get(request.ip);
+    if (cachedRatelimit != null) {
+      throw createBandsyError(
+        HttpResponseCodes.TOO_MANY_REQUESTS,
+        BandsyResponseCodes.RATELIMITED,
+        "you are being ratelimited (cached)",
+      );
     }
 
-    let id: string;
-    switch (options.type) {
-      case RatelimitType.IP: {
-        id = request.ip;
+    const ratelimit = await redis.get(request.ip);
+    if (Number.parseInt(ratelimit ?? "0", 10) > Date.now()) {
+      // requires ttl in seconds
+      cache.set(request.ip, ratelimit, (Number.parseInt(ratelimit ?? "0", 10) - Date.now()) / 1000);
 
-        break;
-      }
-      case RatelimitType.USER: {
-        // throw (unimplemented)
-        throw new Error("wip error - unimplemeted");
-
-        break;
-      }
-      default: {
-        // throw
-        throw new Error("wip error");
-      }
+      throw createBandsyError(
+        HttpResponseCodes.TOO_MANY_REQUESTS,
+        BandsyResponseCodes.RATELIMITED,
+        "you are being ratelimited",
+      );
     }
 
-    const ratelimit = ratelimits.find(e => e.route === request.req.url && e.method === request.req.method);
+    // calculate rate
+    // TODO: make sampling period config or env var
+    // TODO: get date only once? - think about which is more accurate (accuracy + optimisation)
+    const samplingPeriod = 30000;
+    const currentPeriod = Math.floor(Date.now() / samplingPeriod);
 
-    if (ratelimit == null) {
-      ratelimits.push({
-        id,
-        route: request.req.url as string,
-        method: request.req.method as string,
-        currentCalls: 1,
-      });
+    // TODO: remove excessive brackets
+    // TODO: need to make this route and ratelimiter unique as well
+    Promise.all([redis.incr(`${currentPeriod}:${request.ip}`), redis.get(`${currentPeriod - 1}:${request.ip}`)])
+      .then(([fetchedCurrent, fetchedPrevious]) => {
+        const timeSinceInterval = Date.now() - (currentPeriod * samplingPeriod);
 
-      return;
-    }
+        // TODO: make sure the set expires correctly even if theres errors along the way!!!
+        if (fetchedCurrent != null) {
+          redis.expire(`${currentPeriod}:${request.ip}`, Math.ceil(((samplingPeriod * 2) - timeSinceInterval) / 60));
+        }
+        if (fetchedPrevious != null) {
+          redis.expire(`${currentPeriod - 1}:${request.ip}`, Math.ceil((samplingPeriod - timeSinceInterval) / 60));
+        }
 
-    if (ratelimit.currentCalls === options.allowedCalls) {
-      // throw
-      throw new Error("wip error");
-    }
+        const [current, previous] = [fetchedCurrent ?? 0, Number.parseInt(fetchedPrevious ?? "0", 10)];
+        const rate = previous * (1 - timeSinceInterval / samplingPeriod) + current;
 
-    ratelimit.currentCalls += 1;
+        if (rate > MAX_ALLOWED_REQUESTS) {
+          // eslint-disable-next-line max-len
+          const ratelimitMs = Math.max(samplingPeriod * (1 - Math.max(MAX_ALLOWED_REQUESTS - current, 0) / Math.max(MAX_ALLOWED_REQUESTS - current, previous)) - timeSinceInterval, 0)
+            + samplingPeriod * (1 - MAX_ALLOWED_REQUESTS / Math.max(MAX_ALLOWED_REQUESTS, current));
+
+          redis.set(request.ip, Date.now() + ratelimitMs, "PX", Math.ceil(ratelimitMs));
+        }
+      })
+      .catch(fastify.log.error);
   });
 };

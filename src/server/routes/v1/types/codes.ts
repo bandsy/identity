@@ -12,6 +12,7 @@ enum BandsyResponseCodes {
   INVALID_TOKEN,
   FORBIDDEN,
   UNAUTHORISED,
+  RATELIMITED,
 }
 
 export {

@@ -9,13 +9,25 @@ import old from "./index-old";
 
 const { NODE_ENV } = process.env;
 
-// TODO: ratelimiting
+// TODO: ratelimiting (redis required)
 // TODO: blacklists
 // DONE: basic authorisation (token, admin)
 // TODO: mfa routes
 // TODO: figure out how to do user account links
 // TODO: figure out how to do user payment links
+// TODO: figure out what were doing with usernames
 // TODO: update docs and make them look nicer
+
+// TODO: account activity
+// TODO: password change if the user is logged in
+// TODO: admin disable accounts
+// TODO: admin routes
+// TODO: user fetch data routes
+// TODO: account deletion (how we do handle it?)
+// TODO: request ALL account data
+// TODO: update docs and make them look nicer
+
+// TODO: look into load shedding
 export default async (fastify: FastifyInstance): Promise<void> => {
   fastify.register(admin, { prefix: "admin" });
   fastify.register(user, { prefix: "user" });
