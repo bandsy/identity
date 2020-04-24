@@ -95,6 +95,8 @@ if (!envVarsOk) {
 // TODO: propagate any errors from connectDb and startServer instead
 // TODO: better/separate way to handle env vars
 
+// TODO: tests for env vars!!!
+
 (async (): Promise<void> => {
   try {
     await connectDb();
