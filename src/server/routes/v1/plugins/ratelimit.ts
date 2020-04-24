@@ -1,10 +1,8 @@
-import { ServerResponse } from "http";
-
-import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import Redis from "ioredis";
 import NodeCache from "node-cache";
 
-import { IRatelimitOptions, HttpResponseCodes, BandsyResponseCodes } from "../types";
+import { HttpResponseCodes, BandsyResponseCodes } from "../types";
 import { createBandsyError } from "../../../helpers";
 
 const MAX_ALLOWED_REQUESTS = 5;
@@ -22,16 +20,21 @@ const redis = new Redis({
 
 const cache = new NodeCache();
 
+// TODO: heres how we can do groups; make the group name included in the redis key!!!
+
 // TODO: set ratelimit headers
-export default async (fastify: FastifyInstance, options: IRatelimitOptions): Promise<void> => {
+// TODO: add support for user ratelimiting
+// TODO: proper error handling
+export default async (fastify: FastifyInstance): Promise<void> => {
   // let ratelimits: { ip: string; end: Date }[] = [];
 
+  // TODO: make redis db an env var
   await redis.select(0);
   await redis.flushdb();
 
   fastify.decorateRequest("ratelimits", false);
 
-  fastify.addHook("onRequest", async (request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+  fastify.addHook("onRequest", async (request: FastifyRequest) => {
     // prevents multiple ratelimits to be registered on the same group of routes
     if (request.ratelimits === true) {
       throw createBandsyError(
