@@ -71,6 +71,18 @@ const envVarsOk = verifyEnvVars([
   {
     envVar: "JWT_PUBLIC_KEY",
   },
+  {
+    envVar: "ACCOUNT_VERIFICATION_TIME",
+    requirements: {
+      type: "number",
+    },
+  },
+  {
+    envVar: "TOKEN_VALIDITY_TIME",
+    requirements: {
+      type: "number",
+    },
+  },
 ]);
 
 if (!envVarsOk) {

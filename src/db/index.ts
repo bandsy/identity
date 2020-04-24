@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { UserModel, VerificationModel } from "./models";
 import { Base, User, Verification } from "./schemas";
 import { UserService, IUserService, VerificationService } from "./services";
+import { createDatabaseError } from "./helpers";
 import {
   IDbUpdateInfo,
   IDbDeleteInfo,
@@ -17,6 +18,9 @@ import {
   IUserCreateInfo,
   IUserUpdateInfo,
   IVerificationType,
+
+  DatabaseError,
+  IDatabaseError,
 } from "./types";
 
 const {
@@ -28,6 +32,8 @@ const {
 } = process.env;
 
 // TODO: see if theres a way to pass the cert to mongoose directly
+// TODO: IMPORTANT: im using normal .finds a lot which are probably less performant than findOne()s,
+// add a findOne() fn to all the services
 const connectDb = async (): Promise<void> => {
   try {
     const certPath = path.join(NODE_PATH, "mongo-cert.pem");
@@ -87,4 +93,9 @@ export {
   User,
   VerificationService,
   IVerificationType,
+
+  DatabaseError,
+  IDatabaseError,
+
+  createDatabaseError,
 };

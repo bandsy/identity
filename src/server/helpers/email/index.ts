@@ -1,3 +1,4 @@
+import { verifyEmail } from "./utils";
 import {
   IBaseEmailOptions,
   Email,
@@ -16,4 +17,6 @@ export {
   VerificationEmail,
   RecoveryEmail,
   IRecoveryEmailOptions,
+
+  verifyEmail,
 };

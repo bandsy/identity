@@ -1,5 +1,6 @@
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyCookie from "fastify-cookie";
+import fastifyCors from "fastify-cors";
 
 import routes from "./routes";
 
@@ -19,6 +20,11 @@ const buildFastify = (settings = {}): FastifyInstance => {
   // TODO make secret an env var
   fastify.register(fastifyCookie, {
     secret: "rawrxd",
+  });
+
+  // TODO: show matt how to use telepresence so i can set this properly!!!
+  fastify.register(fastifyCors, {
+    origin: true,
   });
 
   fastify.register(routes, { prefix: "/api" });

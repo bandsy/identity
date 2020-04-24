@@ -41,6 +41,7 @@ const generateTOTP = (secret: string, window = 0): number => {
   return generateHOTP(secret, counter + window);
 };
 
+// TODO: input validation, esp for secret being null (i dont trust ts obviously)
 const verifyTOTP = (token: number, secret: string, window = 1): boolean => {
   if (Math.abs(+window) > 5) {
     throw new Error("totp window too large");
