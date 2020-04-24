@@ -115,3 +115,14 @@ spec:
             configMapKeyRef:
               key: MONGO_DB
               name: {{ .Release.Name }}
+
+        - name: ACCOUNT_VERIFICATION_TIME
+          valueFrom:
+            configMapKeyRef:
+              key: ACCOUNT_VERIFICATION_TIME
+              name: {{ .Release.Name }}
+        - name: TOKEN_VALIDITY_TIME
+          valueFrom:
+            configMapKeyRef:
+              key: TOKEN_VALIDITY_TIME
+              name: {{ .Release.Name }}
