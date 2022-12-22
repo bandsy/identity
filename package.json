@@ -63,7 +63,7 @@
     "hi-base32": "^0.5.0",
     "inversify": "^5.0.1",
     "ioredis": "^4.16.3",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "mongoose": "^5.9.9",
     "node-cache": "^5.1.0",
     "node-fetch": "^2.6.0",
